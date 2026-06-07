@@ -1251,7 +1251,7 @@
 
   /* ===== 可逆过程模块 ===== */
 
-  // --- 可逆过程 DOM 引用（延迟初始化，因元素在 </script> 之后） ---
+  // --- 可逆过程 DOM 引用（延迟初始化，因元素在 script 标签之后） ---
   let pvCompareCanvas = null, pvctx = null;
   let entropyCanvas = null, sctx2 = null;
   let revTargetRatioSlider = null, revStepsSlider = null;
@@ -1840,7 +1840,8 @@
     // 功填充动画
     if (workFillAnimating && rev_active && rev_trace.vol.length > 1 && irrev_pathRecorded) {
       const alpha = workFillProgress;
-      // 可逆功填充：等温线下的面积
+      const isIsoFill = heatModeSelect.value === 'isothermal';
+      // 可逆功填充：等温线或绝热线下的面积
       const V_rev_initial = rev_initialV0;
       const V_rev_final = rev_trace.vol[rev_trace.vol.length - 1];
       const V_fill_start = Math.min(V_rev_initial, V_rev_final);
@@ -1851,10 +1852,12 @@
         const xStart = xV(V_fill_start);
         ctx.moveTo(xStart, padT + ph);
         const steps = 200;
+        const adiabConst = rev_initialP0 * Math.pow(V_rev_initial, 2); // γ=2 for 2D gas
         for (let i = 0; i <= steps; i++) {
           const Vf = V_fill_start + (i / steps) * (V_fill_end - V_fill_start);
-          // 使用可逆路径的 P(V) 或等温参考线
-          const Pf = Nref * Tref / Math.max(Vf, 1e-8);
+          const Pf = isIsoFill
+            ? Nref * Tref / Math.max(Vf, 1e-8)
+            : adiabConst / Math.pow(Math.max(Vf, 1e-8), 2);
           ctx.lineTo(xV(Vf), yP(Pf));
         }
         ctx.lineTo(xV(V_fill_end), padT + ph);
@@ -2150,14 +2153,29 @@
     const qIrrFinal = irrev_path.q[irrev_path.q.length - 1] || 0;
     const dUIrrFinal = irrev_path.dU[irrev_path.dU.length - 1] || 0;
 
-    // 不可逆熵变（状态函数，用可逆路径的终态值）
-    const dSsysIrr = dSsysRev;
+    const isIso = heatModeSelect.value === 'isothermal';
+
+    // 不可逆熵变：用状态函数公式从不可逆路径的实际终态计算
+    let dSsysIrr;
+    if (isIso) {
+      // 等温：终态温度相同，ΔS_sys 由体积变化决定（状态函数，与可逆路径相同）
+      dSsysIrr = dSsysRev;
+    } else {
+      // 绝热：不可逆终态与可逆终态不同，从不可逆路径的实际 (T,V) 计算
+      const T_i = initialTemp0;
+      const dUIrr = irrev_path.dU[irrev_path.dU.length - 1] || 0;
+      const T_f_irrev = T_i + dUIrr / N;
+      const V_f_irrev = irrev_path.vol[irrev_path.vol.length - 1];
+      if (T_f_irrev > 0 && V_f_irrev > 0) {
+        dSsysIrr = N * Math.log(Math.max(T_f_irrev / T_i, 1e-8)) + N * Math.log(Math.max(V_f_irrev / irrev_path.vol[0], 1e-8));
+      } else {
+        dSsysIrr = 0;
+      }
+    }
 
     // 不可逆环境熵变
     const dSsurrIrr = -(qIrrFinal) / Math.max(initialTemp0, 1e-8);
     const dSunivIrr = dSsysIrr + dSsurrIrr;
-
-    const isIso = heatModeSelect.value === 'isothermal';
     const modeLabel = isIso ? '等温' : '绝热';
 
     let tbl = '<table class="data-table"><thead><tr><th>量</th><th>不可逆 (' + modeLabel + ')</th><th>可逆 (' + modeLabel + ')</th></tr></thead><tbody>';
@@ -2205,7 +2223,10 @@
 
     if (revExpBtn) {
       revExpBtn.onclick = () => {
-        if (revTargetRatioSlider) revTargetRatioSlider.value = Math.max(1.20, Number(revTargetRatioSlider.value));
+        if (revTargetRatioSlider) {
+          const cur = Number(revTargetRatioSlider.value);
+          revTargetRatioSlider.value = Math.min(1.80, Math.max(1.02, cur + (cur < 1 ? 0.5 : 0.3)));
+        }
         if (revTargetRatioSlider) revTargetRatioSlider.oninput();
         runReversible();
         updateRevStats();
@@ -2213,7 +2234,10 @@
     }
     if (revCompBtn) {
       revCompBtn.onclick = () => {
-        if (revTargetRatioSlider) revTargetRatioSlider.value = Math.min(0.80, Number(revTargetRatioSlider.value));
+        if (revTargetRatioSlider) {
+          const cur = Number(revTargetRatioSlider.value);
+          revTargetRatioSlider.value = Math.max(0.30, Math.min(0.98, cur - (cur > 1 ? 0.5 : 0.3)));
+        }
         if (revTargetRatioSlider) revTargetRatioSlider.oninput();
         runReversible();
         updateRevStats();
