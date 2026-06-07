@@ -1,0 +1,1222 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<title>恒外压不可逆膨胀/压缩：非平衡分子演示 v16</title>
+<style>
+  body { font-family: Arial, "Microsoft YaHei", sans-serif; margin: 16px; color: #222; }
+  h1 { font-size: 22px; margin: 0 0 8px 0; }
+  .note { font-size: 13px; line-height: 1.55; color: #444; max-width: 1180px; margin-bottom: 10px; }
+  .wrap { display: grid; grid-template-columns: 770px 390px; gap: 18px; align-items: start; }
+  .panel { border: 1px solid #ccc; border-radius: 8px; padding: 10px; background: #fafafa; }
+  canvas { border: 1px solid #aaa; background: white; border-radius: 6px; display: block; }
+  button { margin: 4px 6px 4px 0; padding: 6px 12px; }
+  label { display: block; margin-top: 9px; font-size: 14px; }
+  input[type=range] { width: 100%; }
+  .stat { font-size: 14px; line-height: 1.52; margin-top: 8px; }
+  .warn { font-weight: bold; margin-top: 8px; padding: 8px; border-radius: 6px; font-size: 14px; line-height: 1.5; }
+  .good { background:#eaf7ea; color:#126212; }
+  .bad { background:#fdeeee; color:#9d1c1c; }
+  .legend { font-size: 12px; color: #444; margin-top: 6px; line-height: 1.45; }
+  .subhead { font-size: 14px; font-weight: bold; margin: 10px 0 6px 0; }
+  code { background:#eee; border-radius: 4px; padding: 1px 4px; }
+
+  .lecture { max-width: 1180px; border: 1px solid #b9c7d6; background: #f7fbff; border-radius: 10px; padding: 12px 16px; margin: 12px 0 16px 0; }
+  .lecture h2 { font-size: 18px; margin: 4px 0 8px 0; }
+  .lecture-intro { font-size: 13px; line-height: 1.65; margin: 6px 0 10px 0; }
+  .lecture details { background: #ffffff; border: 1px solid #d7e0ea; border-radius: 8px; margin: 8px 0; padding: 0; }
+  .lecture summary { cursor: pointer; list-style: none; font-weight: bold; font-size: 15px; padding: 10px 12px; background: #eef5fb; border-radius: 8px; }
+  .lecture summary::-webkit-details-marker { display: none; }
+  .lecture summary::before { content: "▶"; display: inline-block; width: 18px; color: #426b8a; }
+  .lecture details[open] summary::before { content: "▼"; }
+  .lecture-body { padding: 8px 14px 12px 32px; }
+  .lecture-body p { font-size: 13px; line-height: 1.7; margin: 7px 0; }
+  .lecture-body ul { margin-top: 4px; margin-bottom: 6px; padding-left: 22px; }
+  .lecture-body li { font-size: 13px; line-height: 1.55; margin: 4px 0; }
+
+  .theory { max-width: 1180px; border: 1px solid #b9c7d6; background: #f7fbff; border-radius: 10px; padding: 12px 16px; margin: 12px 0 16px 0; }
+  .theory h2 { font-size: 18px; margin: 4px 0 8px 0; }
+  .theory h3 { font-size: 15px; margin: 12px 0 5px 0; }
+  .theory p { font-size: 13px; line-height: 1.65; margin: 6px 0; }
+  .theory ul { margin-top: 4px; margin-bottom: 6px; padding-left: 22px; }
+  .theory li { font-size: 13px; line-height: 1.55; margin: 4px 0; }
+  .eq { font-family: "Times New Roman", serif; background: #eef3f7; border-radius: 5px; padding: 2px 6px; white-space: nowrap; }
+  .theory-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 22px; }
+  @media (max-width: 900px) { .theory-grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<h1>恒外压下气缸气体的不可逆膨胀与压缩：分子视角</h1>
+<div class="note">
+  这是一个二维硬球气体的教学演示。右侧灰色板是活塞，红色箭头表示恒定外压。
+  外压小于初始参考压强时发生膨胀，外压大于初始参考压强时发生压缩。
+  绿色和紫色曲线表示左侧区域与活塞附近区域的<strong>局部压力估算</strong>，用于说明非平衡过程中不同区域的压力可以不同。
+  下方过程图的纵轴尺度在一次演示中保持固定，不再随时间自动改变，因此更适合课堂观察。速率分布图的横轴也在一次演示中固定；过程图中另外加入了初始体积 V₀ 的参考线，便于比较“回到初始状态”与否。新版还加入功、热和内能变化的跟踪图，并在右侧说明各参数的教学计算方法。
+</div>
+
+
+<div class="lecture">
+<h2>理论说明与计算方法</h2>
+<p class="lecture-intro">本网页是一个二维硬球气体的教学模型，用来帮助学生理解恒外压下快速膨胀或压缩时，
+    微观分子运动、局部压力、速率分布、功、热与内能变化之间的关系。当前版本使用较多粒子、较重活塞，并在释放活塞前进行固定体积预平衡；局部压力估算用预平衡后的 P₀ 进行标定，以减少有限粒子涨落造成的系统性偏移。所有量均为
+    <strong>二维约化单位</strong>，用于定性教学，不用于真实气体定量计算。</p>
+<p class="lecture-intro">以下内容整理为折叠式讲义。点击每一节标题可展开或收起。</p>
+<details open>
+<summary>1. 模型与动力学</summary>
+<div class="lecture-body">
+<p>
+        气体由较多相同硬球粒子组成，粒子之间以及粒子与壁面之间发生弹性碰撞。
+        右侧边界是可移动活塞。程序先在固定活塞位置下预平衡气体，再用预平衡后的 <span class="eq">NkT/V</span> 作为初始参考压强 <span class="eq">P<sub>0</sub></span>，并用它标定局部压力估算。外界对活塞施加恒定外压
+        <span class="eq">P<sub>ext</sub></span>。活塞左侧是气体体积
+        <span class="eq">V(t)=x<sub>p</sub>(t)H</span>，其中
+        <span class="eq">x<sub>p</sub></span> 是活塞位置，<span class="eq">H</span> 是二维气缸高度。
+      </p>
+      <p>
+        活塞运动由活塞附近局部压力、恒外压和阻尼共同决定。这个设置不是严格研究级分子动力学，
+        但可以展示边界运动如何通过分子碰撞改变气体能量。
+      </p>
+</div>
+</details>
+<details>
+<summary>2. 平均动能与动能温度估算</summary>
+<div class="lecture-body">
+<p>
+        对第 <span class="eq">i</span> 个粒子，平动动能为
+        <span class="eq">K<sub>i</sub>=m(v<sub>xi</sub><sup>2</sup>+v<sub>yi</sub><sup>2</sup>)/2</span>。
+        总动能为
+        <span class="eq">K=ΣK<sub>i</sub></span>。
+      </p>
+      <p>
+        本演示取 <span class="eq">k<sub>B</sub>=1</span>。二维硬球气体每个粒子有两个平动自由度，
+        因而在平衡或局部平衡条件下有 <span class="eq">&lt;K&gt;/N=T</span>。
+        网页中显示的“动能温度估算”按
+        <span class="eq">T<sub>kin</sub>=K/N</span> 计算。
+      </p>
+</div>
+</details>
+<details>
+<summary>3. 内能</summary>
+<div class="lecture-body">
+<p>
+        硬球理想气体没有连续分子间势能项，因此这里的气体内能近似取为平动动能：
+        <span class="eq">U(t)=K(t)</span>。
+        内能变化为
+        <span class="eq">ΔU=U(t)-U(0)</span>。
+      </p>
+      <p>
+        如果以后改成 Lennard-Jones 气体，则内能应写成
+        <span class="eq">U=K+Φ</span>，其中 <span class="eq">Φ</span> 是分子间势能。
+      </p>
+</div>
+</details>
+<details>
+<summary>4. 速率分布</summary>
+<div class="lecture-body">
+<p>
+        粒子速率定义为
+        <span class="eq">v=(v<sub>x</sub><sup>2</sup>+v<sub>y</sub><sup>2</sup>)<sup>1/2</sup></span>。
+        右侧速率图统计当前所有粒子的速率直方图。
+      </p>
+      <p>
+        灰色参考曲线是二维 Maxwell 型速率分布：
+        <span class="eq">f<sub>2D</sub>(v)=(m/T)v exp[-mv<sup>2</sup>/(2T)]</span>。
+        该分布严格适用于平衡态或局部平衡态。快速膨胀或压缩时，分布可能明显偏离这条参考曲线。
+      </p>
+</div>
+</details>
+<details>
+<summary>5. 局部压力与“压力无法定义”的含义</summary>
+<div class="lecture-body">
+<p>
+        平衡态中，气体压力可以作为一个单一热力学状态量。但在快速膨胀或快速压缩过程中，
+        气体内部不同区域尚未达到机械平衡，因此不同位置的动量通量可以不同。
+      </p>
+      <p>
+        网页中显示两个局部压力估算值：
+        <span class="eq">P<sub>left</sub></span> 表示气缸左侧区域的局部压力估算，
+        <span class="eq">P<sub>piston</sub></span> 表示活塞附近区域的局部压力估算。
+        它们采用局部动量通量近似：
+        <span class="eq">P<sub>x</sub>≈Σm(v<sub>x</sub>-&lt;v<sub>x</sub>&gt;)<sup>2</sup>/A</span>，
+        并做了时间平滑，避免单帧碰撞数太少导致数值跳变。
+      </p>
+      <p>
+        当 <span class="eq">P<sub>left</sub></span> 与
+        <span class="eq">P<sub>piston</sub></span> 明显不同时，说明体系处于非平衡状态。
+        此时可以谈局部压力或边界动量通量，但不能把整个气体严格赋予一个单一的
+        <span class="eq">P<sub>gas</sub></span>。
+      </p>
+</div>
+</details>
+<details>
+<summary>6. 恒外压边界功</summary>
+<div class="lecture-body">
+<p>
+        本演示采用化学热力学习惯符号：
+        <span class="eq">ΔU=q+w</span>。
+        恒外压不可逆体积功按宏观热力学公式计算：
+        <span class="eq">w<sub>ext</sub>=-P<sub>ext</sub>[V(t)-V<sub>0</sub>]</span>。
+      </p>
+      <p>
+        膨胀时 <span class="eq">V(t)&gt;V<sub>0</sub></span>，所以
+        <span class="eq">w<sub>ext</sub>&lt;0</span>，表示气体对外做功；
+        压缩时 <span class="eq">V(t)&lt;V<sub>0</sub></span>，所以
+        <span class="eq">w<sub>ext</sub>&gt;0</span>，表示外界对气体做功。
+      </p>
+</div>
+</details>
+<details>
+<summary>7. 活塞碰撞功</summary>
+<div class="lecture-body">
+<p>
+        网页还显示一个教学辅助量
+        <span class="eq">w<sub>coll</sub></span>，称为活塞碰撞功。
+        它逐次累计分子与运动活塞碰撞前后气体分子动能的变化：
+        <span class="eq">w<sub>coll</sub>=ΣΔK<sub>collision</sub></span>。
+      </p>
+      <p>
+        这个量用于展示移动边界如何通过分子碰撞把机械能传递给气体或从气体带走能量。
+        它不是标准热力学状态函数，也不一定与
+        <span class="eq">w<sub>ext</sub></span> 完全相同。有限质量活塞、阻尼和明显非平衡都会造成二者差异。
+      </p>
+</div>
+</details>
+<details>
+<summary>8. 热浴、Boltzmann 分布与速度重标定</summary>
+<div class="lecture-body">
+<p>
+        严格的等温体系应当对应正则系综。也就是说，在平衡态下，体系状态的概率应服从
+        Boltzmann 权重：
+        <span class="eq">P(Γ)∝exp[-H(Γ)/(k<sub>B</sub>T<sub>0</sub>)]</span>。
+        对理想硬球气体而言，速度部分对应 Maxwell-Boltzmann 分布。二维情况下，单个速度分量应近似满足
+        <span class="eq">f(v<sub>x</sub>)∝exp[-mv<sub>x</sub><sup>2</sup>/(2k<sub>B</sub>T<sub>0</sub>)]</span>，
+        速率分布则为
+        <span class="eq">f<sub>2D</sub>(v)=(m/k<sub>B</sub>T<sub>0</sub>)v exp[-mv<sup>2</sup>/(2k<sub>B</sub>T<sub>0</sub>)]</span>。
+      </p>
+      <p>
+        从统计力学角度看，温度控制的目标不只是让某一时刻的平均动能等于目标值，
+        而是让体系在长期采样中给出正确的 Boltzmann/Maxwell-Boltzmann 分布。
+        真实或严格的 MD 恒温方法通常使用 Langevin thermostat、Andersen thermostat、Nosé-Hoover thermostat
+        或随机速度重标定等方法，使体系在合适条件下采样正则系综。
+      </p>
+      <p>
+        对非平衡体系而言，“温度”本身也需要谨慎理解。严格的热力学温度通常定义在平衡态或局部平衡态中。
+        如果体系处于快速膨胀或快速压缩过程，速度分布可能不是 Maxwell-Boltzmann 分布，
+        不同区域甚至不同方向的动量涨落也可能不同。这时不能总是给整个体系赋予一个单一、严格的温度。
+      </p>
+      <p>
+        在分子模拟中，常用一个<strong>动能温度估算</strong>来表征平均平动动能：
+        <span class="eq">T<sub>kin</sub>=K/N</span>。
+        这个量适合用来观察能量变化趋势，但在明显非平衡时，它只是一个由平均动能定义的估算量，
+        不一定等同于严格热力学温度。必要时还可以定义局部动能温度、方向温度
+        <span class="eq">T<sub>x</sub></span>、<span class="eq">T<sub>y</sub></span>，
+        或温度张量，而不是一个全局标量。
+      </p>
+      <p>
+        当前网页使用的是更简单的<strong>确定性速度重标定</strong>，目的是教学演示，而不是严格正则系综采样。
+        程序先计算当前总动能 <span class="eq">K</span> 和当前动能温度估算
+        <span class="eq">T<sub>kin</sub>=K/N</span>，再把所有分子速度乘以
+        <span class="eq">λ=(T<sub>0</sub>/T<sub>kin</sub>)<sup>1/2</sup></span>。
+        这样速度变为 <span class="eq">v′=λv</span>，动能变为
+        <span class="eq">K′=λ<sup>2</sup>K</span>，从而把当前平均动能拉回目标值附近。
+      </p>
+      <p>
+        这个方法的物理含义可以理解为：热浴在每一步人为地向气体补充或移走一部分动能，
+        使全局动能温度估算保持在 <span class="eq">T<sub>0</sub></span> 附近。
+        程序把速度重标定造成的动能变化
+        <span class="eq">ΔK<sub>bath</sub>=K′−K</span>
+        累计为热量 <span class="eq">q</span>。
+        若 <span class="eq">ΔK<sub>bath</sub>&gt;0</span>，表示热浴向气体供热；
+        若 <span class="eq">ΔK<sub>bath</sub>&lt;0</span>，表示气体向热浴放热。
+      </p>
+      <p>
+        需要特别说明，简单速度重标定会压制真实正则系综中的能量涨落，也不会自动保证速度分布严格服从
+        Maxwell-Boltzmann 分布。它只保证平均动能被控制在目标值附近。因此，在本网页中，
+        “等温热浴（简化重标定）”应理解为<strong>教学近似的温度控制器</strong>，用于帮助学生理解等温膨胀/压缩中
+        功与热的能量收支，而不是严格的正则系综模拟。
+      </p>
+      <p>
+        在本教学模型中，更适合用
+        <span class="eq">ΔU≈q+w<sub>coll</sub></span>
+        检查微观能量收支；同时用
+        <span class="eq">w<sub>ext</sub>=-P<sub>ext</sub>ΔV</span>
+        连接宏观不可逆体积功公式。
+      </p>
+</div>
+</details>
+<details>
+<summary>9. 全过程热量如何得到</summary>
+<div class="lecture-body">
+<p>
+        热量 <span class="eq">q</span> 不是状态函数，不能只由初态和终态唯一决定；
+        它是过程中由于热接触而传递的能量。因此，本网页中的总热量是沿模拟轨迹逐步累计得到的。
+      </p>
+      <p>
+        若选择<strong>绝热壁</strong>，定义上气体与外界没有热交换，
+        因而整个过程的热量为
+        <span class="eq">q<sub>total</sub>=0</span>。
+        这时气体内能变化主要来自活塞碰撞功：
+        <span class="eq">ΔU≈w<sub>coll</sub></span>。
+        膨胀时，分子撞到向外运动的活塞后通常变慢，气体动能减少；
+        压缩时，分子撞到向内运动的活塞后通常变快，气体动能增加。
+      </p>
+      <p>
+        若选择<strong>等温热浴（简化重标定）</strong>，程序在每一步计算速度重标定前后的动能变化：
+        <span class="eq">Δq<sub>i</sub>=K′<sub>i</sub>−K<sub>i</sub></span>。
+        全过程热量就是这些小步热量的累加：
+        <span class="eq">q<sub>total</sub>=Σ<sub>i</sub>Δq<sub>i</sub>=Σ<sub>i</sub>(K′<sub>i</sub>−K<sub>i</sub>)</span>。
+        因此，网页中橙色曲线显示的是从初始时刻开始累计的热量。
+      </p>
+      <p>
+        对理想硬球气体而言，内能主要由平动动能决定。若等温条件维持得较好，
+        <span class="eq">ΔU</span> 通常较小。等温膨胀时气体对外做功，为维持平均动能，
+        热浴通常向气体供热，因此 <span class="eq">q&gt;0</span>；
+        等温压缩时外界对气体做功，热浴通常带走多余能量，因此
+        <span class="eq">q&lt;0</span>。
+      </p>
+      <p>
+        网页中同时给出两个功的口径。宏观恒外压边界功为
+        <span class="eq">w<sub>ext</sub>=−P<sub>ext</sub>(V<sub>f</sub>−V<sub>0</sub>)</span>。
+        若用宏观第一定律口径估算终态热量，可写作
+        <span class="eq">q<sub>macro</sub>=ΔU−w<sub>ext</sub></span>。
+        另一方面，网页中的微观能量收支更适合用
+        <span class="eq">q<sub>total</sub>≈ΔU−w<sub>coll</sub></span>
+        来检查，其中 <span class="eq">w<sub>coll</sub></span> 是活塞通过分子碰撞传递给气体的机械能。
+      </p>
+      <p>
+        判断“过程结束”时，应等到体系接近新的稳定状态，例如活塞速度接近零、
+        左侧局部压力与活塞附近局部压力接近、速率分布重新接近 Maxwell 型参考曲线。
+        这时读取 <span class="eq">V<sub>f</sub></span>、
+        <span class="eq">ΔU</span>、<span class="eq">w</span> 和
+        <span class="eq">q</span>，才更接近热力学终态比较。
+      </p>
+</div>
+</details>
+</div>
+<div class="wrap">
+  <div class="panel">
+    <canvas id="simCanvas" width="740" height="430"></canvas>
+    <div class="legend">
+      蓝色粒子：气体分子；灰色板：活塞；红色箭头：恒外压。活塞可向右移动表示膨胀，也可向左移动表示压缩；只显示活塞左侧的气体体积。
+    </div>
+
+    <div class="subhead">过程跟踪图</div>
+    <canvas id="traceCanvas" width="740" height="240"></canvas>
+    <div class="legend">
+      绿色：左侧局部压力；紫色：活塞附近局部压力；红色实线：体积；红色虚线：外压；橙色虚点线：初始体积 V₀。<br>
+      左侧纵轴对应压力，右侧纵轴对应体积，二者在一次演示内使用固定尺度。
+    </div>
+
+    <div class="subhead">功、热与内能变化</div>
+    <canvas id="energyCanvas" width="740" height="240"></canvas>
+    <div class="legend">
+      黑色：ΔU；蓝色：恒外压边界功 w<sub>ext</sub>；青色虚线：活塞碰撞功 w<sub>coll</sub>；橙色：热量 q。<br>
+      本演示采用化学热力学习惯符号：ΔU = q + w，膨胀时 w 通常为负，压缩时 w 通常为正。w<sub>coll</sub> 是教学辅助量，不是标准热力学状态函数。
+    </div>
+  </div>
+
+  <div class="panel">
+    <button id="playBtn">开始 / 暂停</button>
+    <button id="stepBtn">单步推进</button>
+    <button id="resetBtn">重置</button><br>
+    <button id="weakExpBtn">弱膨胀</button>
+    <button id="strongExpBtn">强膨胀</button>
+    <button id="nearEqBtn">近平衡</button>
+    <button id="weakCompBtn">弱压缩</button>
+    <button id="strongCompBtn">强压缩</button>
+
+    <label>外压 / 初始参考压强 <span id="ratioVal"></span></label>
+    <input id="ratioSlider" type="range" min="0.20" max="2.50" step="0.01" value="0.78">
+    <div class="legend">小于 1 表示膨胀驱动；等于 1 表示接近平衡；大于 1 表示压缩驱动。初始参考压强由固定活塞预平衡后的 NkT/V 得到；局部压力估算会用这个参考值标定。</div>
+
+    <label>初始动能温度（控制初始平均动能） <span id="tempVal"></span></label>
+    <input id="tempSlider" type="range" min="0.60" max="1.80" step="0.05" value="1.00">
+
+    <label>初始活塞位置（拖动后自动重置，越大越靠右） <span id="posVal"></span></label>
+    <input id="posSlider" type="range" min="0.40" max="0.90" step="0.01" value="0.68">
+    <div class="legend">这是初始体积参数。拖动后会重新生成气体初态，而不是在当前过程中移动活塞。</div>
+
+    <label>活塞阻尼（耗散，帮助最终稳定） <span id="dampVal"></span></label>
+    <input id="dampSlider" type="range" min="0.0" max="2.5" step="0.1" value="0.7">
+
+    <label>模拟速度 <span id="speedVal"></span></label>
+    <input id="speedSlider" type="range" min="0.03" max="1.00" step="0.01" value="0.15">
+
+    <label>热边界条件</label>
+    <select id="heatMode" style="width:100%; padding:6px;">
+      <option value="adiabatic" selected>绝热壁：q = 0</option>
+      <option value="isothermal">等温热浴（简化重标定）：用速度重标定维持平均温度</option>
+    </select>
+
+    <div id="stats" class="stat"></div>
+    <div id="neqBox" class="warn"></div>
+
+    <div class="subhead">速率分布</div>
+    <canvas id="histCanvas" width="360" height="215"></canvas>
+    <div class="legend">
+      灰色曲线是由当前平均动能得到的 2D Maxwell 型参考曲线。横轴范围在一次演示中固定，便于比较不同时刻的速率分布变化。过程若明显非平衡，分布会更偏离该参考曲线。
+    </div>
+
+    <details style="margin-top:10px; font-size:13px; line-height:1.55;">
+      <summary><strong>快速公式回顾</strong></summary>
+      <p><code>Tkin=K/N</code>；<code>U=K</code>；<code>ΔU=U-U0</code>；<code>V=x_pH</code>；
+      <code>w_ext=-P_ext(V-V0)</code>；<code>w_coll=ΣΔK_collision</code>；
+      绝热壁 <code>q=0</code>；等温热浴（简化重标定）是教学近似温度控制器：速度按 <code>λ=(T0/T)^(1/2)</code> 重标定，动能变化累计为 <code>q</code>；严格正则系综应由 Langevin、Andersen、Nosé-Hoover 等恒温方法采样。</p>
+    </details>
+  </div>
+</div>
+
+<script>
+(() => {
+  const simCanvas = document.getElementById('simCanvas');
+  const sctx = simCanvas.getContext('2d');
+  const traceCanvas = document.getElementById('traceCanvas');
+  const tctx = traceCanvas.getContext('2d');
+  const energyCanvas = document.getElementById('energyCanvas');
+  const ectx = energyCanvas.getContext('2d');
+  const histCanvas = document.getElementById('histCanvas');
+  const hctx = histCanvas.getContext('2d');
+
+  const ratioSlider = document.getElementById('ratioSlider');
+  const tempSlider = document.getElementById('tempSlider');
+  const posSlider = document.getElementById('posSlider');
+  const dampSlider = document.getElementById('dampSlider');
+  const speedSlider = document.getElementById('speedSlider');
+  const heatModeSelect = document.getElementById('heatMode');
+
+  const ratioVal = document.getElementById('ratioVal');
+  const tempVal = document.getElementById('tempVal');
+  const posVal = document.getElementById('posVal');
+  const dampVal = document.getElementById('dampVal');
+  const speedVal = document.getElementById('speedVal');
+
+  const playBtn = document.getElementById('playBtn');
+  const stepBtn = document.getElementById('stepBtn');
+  const resetBtn = document.getElementById('resetBtn');
+  const weakExpBtn = document.getElementById('weakExpBtn');
+  const strongExpBtn = document.getElementById('strongExpBtn');
+  const nearEqBtn = document.getElementById('nearEqBtn');
+  const weakCompBtn = document.getElementById('weakCompBtn');
+  const strongCompBtn = document.getElementById('strongCompBtn');
+
+  const stats = document.getElementById('stats');
+  const neqBox = document.getElementById('neqBox');
+
+  // Model parameters
+  const N = 180;
+  const m = 1.0;
+  const r = 0.045;
+  const yMin = 0.0, yMax = 2.4;
+  const xMin = 0.0, xMax = 8.0;
+  const H = yMax - yMin;
+  const pistonMass = 120.0;
+  const baseDt = 0.012;
+  const minX = 1.8;
+  const maxX = xMax * 0.96;
+  const traceLen = 260;
+
+  // Screen mapping for simulation
+  const sx0 = 42, sy0 = 72;
+  const screenW = 615, screenH = 270;
+  function X(x) { return sx0 + (x / xMax) * screenW; }
+  function Y(y) { return sy0 + screenH - (y / H) * screenH; }
+  function DX(dx) { return (dx / xMax) * screenW; }
+  function DY(dy) { return (dy / H) * screenH; }
+
+  let particles = [];
+  let xP = 5.4;
+  let vP = 0.0;
+  let Pext = 0.0;
+  let initialP0 = 1.0;       // measured reference pressure after fixed-volume pre-equilibration
+  let initialIdealP0 = 1.0;  // NkT/V estimate after pre-equilibration
+  let pressureScale = 1.0;    // calibrates local pressure estimator to the equilibrated ideal-gas reference
+  let initialVolume0 = 0.0;
+  let initialEnergy0 = 0.0;
+  let initialTemp0 = 1.0;
+  let workMicro = 0.0;
+  let heatExchange = 0.0;
+  let energyAxisAbsMax = 5.0;
+  let pressureAxisMax = 3.0;
+  let volumeAxisMin = minX * H;
+  let volumeAxisMax = maxX * H;
+  let speedAxisMax = 3.5;
+  let time = 0.0;
+  let running = true;
+  let pLeftSmooth = 0, pRightSmooth = 0;
+  let impulseLeft = 0, impulseRight = 0;
+  let trace = { pL: [], pR: [], vol: [], wExt: [], wMicro: [], q: [], dU: [] };
+
+  function randn() {
+    const u = Math.random() || 1e-9;
+    const v = Math.random() || 1e-9;
+    return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);
+  }
+
+  function updateLabels() {
+    ratioVal.textContent = Number(ratioSlider.value).toFixed(2);
+    tempVal.textContent = Number(tempSlider.value).toFixed(2);
+    posVal.textContent = Number(posSlider.value).toFixed(2);
+    dampVal.textContent = Number(dampSlider.value).toFixed(1);
+    speedVal.textContent = Number(speedSlider.value).toFixed(2) + "×";
+  }
+
+  function kineticEnergy() {
+    let K = 0;
+    for (const p of particles) K += 0.5*m*(p.vx*p.vx + p.vy*p.vy);
+    return K;
+  }
+
+  function temperature() {
+    return kineticEnergy() / N;
+  }
+
+  function volume() {
+    return xP * H;
+  }
+
+  function globalIdealPressure() {
+    return N * temperature() / volume();
+  }
+
+  function deltaU() {
+    return kineticEnergy() - initialEnergy0;
+  }
+
+  function workExternal() {
+    // Chemistry sign convention: work on the gas. Expansion gives negative work.
+    return -Pext * (volume() - initialVolume0);
+  }
+
+  function recordThermoTrace() {
+    trace.pL.push(pLeftSmooth);
+    trace.pR.push(pRightSmooth);
+    trace.vol.push(volume());
+    trace.wExt.push(workExternal());
+    trace.wMicro.push(workMicro);
+    trace.q.push(heatExchange);
+    trace.dU.push(deltaU());
+  }
+
+  function localPressure(xa, xb) {
+    const selected = particles.filter(p => p.x >= xa && p.x < xb);
+    if (selected.length < 3) return null;
+    let meanVx = 0;
+    for (const p of selected) meanVx += p.vx;
+    meanVx /= selected.length;
+
+    let sum = 0;
+    for (const p of selected) {
+      const dv = p.vx - meanVx;
+      sum += m * dv * dv;
+    }
+    const area = Math.max((xb - xa) * H, 1e-6);
+    return sum / area;
+  }
+
+  function updateLocalPressures() {
+    const w = Math.max(0.75, 0.22 * xP);
+    let pL = localPressure(0, Math.min(w, xP));
+    let pR = localPressure(Math.max(0, xP - w), xP);
+
+    const dtEff = baseDt * Math.max(Number(speedSlider.value), 0.03);
+    const pLimp = impulseLeft / Math.max(dtEff, 1e-9) / H;
+    const pRimp = impulseRight / Math.max(dtEff, 1e-9) / H;
+
+    if (pL === null) pL = pLimp;
+    if (pR === null) pR = pRimp;
+
+    // Calibrate the local pressure estimator to the pre-equilibrated ideal-gas reference.
+    pL *= pressureScale;
+    pR *= pressureScale;
+
+    if (time < 0.05) {
+      pLeftSmooth = pL;
+      pRightSmooth = pR;
+    } else {
+      const a = 0.06;
+      pLeftSmooth = (1-a)*pLeftSmooth + a*pL;
+      pRightSmooth = (1-a)*pRightSmooth + a*pR;
+    }
+  }
+
+  function fixedPistonStep(dtEq) {
+    // Fixed-volume hard-sphere dynamics used only to pre-equilibrate the gas before the piston is released.
+    let impLeft = 0;
+    let impRight = 0;
+
+    for (const p of particles) {
+      p.x += p.vx * dtEq;
+      p.y += p.vy * dtEq;
+    }
+
+    resolveParticleCollisions();
+
+    for (const p of particles) {
+      if (p.y < r) {
+        p.y = r;
+        p.vy = Math.abs(p.vy);
+      }
+      if (p.y > H-r) {
+        p.y = H-r;
+        p.vy = -Math.abs(p.vy);
+      }
+      if (p.x < r) {
+        p.x = r;
+        impLeft += 2*m*Math.abs(p.vx);
+        p.vx = Math.abs(p.vx);
+      }
+      if (p.x > xP-r) {
+        p.x = xP-r;
+        impRight += 2*m*Math.abs(p.vx);
+        p.vx = -Math.abs(p.vx);
+      }
+    }
+
+    return { left: impLeft, right: impRight };
+  }
+
+  function preEquilibrateFixedVolume(nSteps) {
+    const dtEq = baseDt * 0.8;
+    for (let i = 0; i < nSteps; i++) {
+      fixedPistonStep(dtEq);
+    }
+  }
+
+  function measureReferencePressure(nSteps) {
+    const dtEq = baseDt * 0.8;
+    let totalRightImpulse = 0;
+    let totalLeftImpulse = 0;
+    for (let i = 0; i < nSteps; i++) {
+      const imp = fixedPistonStep(dtEq);
+      totalRightImpulse += imp.right;
+      totalLeftImpulse += imp.left;
+    }
+    const pRight = totalRightImpulse / Math.max(nSteps * dtEq * H, 1e-12);
+    const pLeft = totalLeftImpulse / Math.max(nSteps * dtEq * H, 1e-12);
+    const pAvg = 0.5 * (pRight + pLeft);
+    if (Number.isFinite(pAvg) && pAvg > 1e-8) return pAvg;
+    return globalIdealPressure();
+  }
+
+  function initialize() {
+    updateLabels();
+    const T0 = Number(tempSlider.value);
+    xP = xMax * Number(posSlider.value);
+    vP = 0;
+    time = 0;
+    particles = [];
+    pLeftSmooth = 0;
+    pRightSmooth = 0;
+    trace = { pL: [], pR: [], vol: [], wExt: [], wMicro: [], q: [], dU: [] };
+    workMicro = 0.0;
+    heatExchange = 0.0;
+
+    // place particles on a jittered grid
+    const cols = 18;
+    const rows = Math.ceil(N / cols);
+    let idx = 0;
+    for (let j = 0; j < rows; j++) {
+      for (let i = 0; i < cols; i++) {
+        if (idx >= N) break;
+        const px = 0.20 + (i + 0.5) * (xP - 0.40) / cols + (Math.random()-0.5)*0.04;
+        const py = 0.18 + (j + 0.5) * (H - 0.36) / rows + (Math.random()-0.5)*0.04;
+        particles.push({x:px, y:py, vx:0, vy:0});
+        idx++;
+      }
+    }
+
+    // velocities
+    let mvx = 0, mvy = 0;
+    for (const p of particles) {
+      p.vx = randn() * Math.sqrt(T0);
+      p.vy = randn() * Math.sqrt(T0);
+      mvx += p.vx; mvy += p.vy;
+    }
+    mvx /= N; mvy /= N;
+    for (const p of particles) {
+      p.vx -= mvx;
+      p.vy -= mvy;
+    }
+
+    // Fixed-volume pre-equilibration before the piston is released.
+    // This reduces finite-particle artifacts and makes the "near equilibrium" case closer to V0.
+    preEquilibrateFixedVolume(450);
+
+    // The reference pressure for setting Pext is the pre-equilibrated ideal-gas estimate.
+    // The raw local pressure estimator is then calibrated so that a pre-equilibrated gas starts near P0.
+    initialIdealP0 = globalIdealPressure();
+    initialP0 = initialIdealP0;
+    initialVolume0 = volume();
+    initialEnergy0 = kineticEnergy();
+    initialTemp0 = temperature();
+
+    const wRef = Math.max(0.75, 0.22 * xP);
+    const rawL = localPressure(0, Math.min(wRef, xP));
+    const rawR = localPressure(Math.max(0, xP - wRef), xP);
+    const rawVals = [];
+    if (rawL !== null && Number.isFinite(rawL) && rawL > 1e-8) rawVals.push(rawL);
+    if (rawR !== null && Number.isFinite(rawR) && rawR > 1e-8) rawVals.push(rawR);
+    const rawAvg = rawVals.length ? rawVals.reduce((a,b)=>a+b,0)/rawVals.length : initialIdealP0;
+    pressureScale = rawAvg > 1e-8 ? initialIdealP0 / rawAvg : 1.0;
+
+    Pext = Number(ratioSlider.value) * initialP0;
+
+    // Initialize local pressure display near the calibrated reference.
+    updateLocalPressures();
+    pLeftSmooth = initialP0;
+    pRightSmooth = initialP0;
+
+    // fixed axes for current run
+    pressureAxisMax = Math.max(2.8 * initialP0, 1.35 * Pext, 1.35 * initialIdealP0, 0.8);
+    volumeAxisMin = minX * H;
+    volumeAxisMax = maxX * H;
+    speedAxisMax = Math.max(3.6 * Math.sqrt(initialTemp0), 3.0);
+    energyAxisAbsMax = Math.max(
+      Math.abs(Pext * (volumeAxisMax - initialVolume0)),
+      Math.abs(Pext * (volumeAxisMin - initialVolume0)),
+      0.8 * initialEnergy0,
+      3.0
+    );
+
+    for (let i = 0; i < 20; i++) {
+      recordThermoTrace();
+    }
+    drawAll();
+  }
+
+  function resolveParticleCollisions() {
+    for (let i=0; i<N; i++) {
+      for (let j=i+1; j<N; j++) {
+        const a = particles[i], b = particles[j];
+        const dx = b.x - a.x;
+        const dy = b.y - a.y;
+        const minD = 2*r;
+        const d2 = dx*dx + dy*dy;
+        if (d2 > 0 && d2 < minD*minD) {
+          const d = Math.sqrt(d2);
+          const nx = dx / d, ny = dy / d;
+          const overlap = minD - d;
+          a.x -= 0.5*overlap*nx; a.y -= 0.5*overlap*ny;
+          b.x += 0.5*overlap*nx; b.y += 0.5*overlap*ny;
+
+          const dvx = b.vx - a.vx;
+          const dvy = b.vy - a.vy;
+          const rel = dvx*nx + dvy*ny;
+          if (rel < 0) {
+            const J = -rel;
+            a.vx -= J*nx; a.vy -= J*ny;
+            b.vx += J*nx; b.vy += J*ny;
+          }
+        }
+      }
+    }
+  }
+
+  function stepOne() {
+    const dt = baseDt * Number(speedSlider.value);
+    impulseLeft = 0;
+    impulseRight = 0;
+
+    for (const p of particles) {
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+    }
+
+    resolveParticleCollisions();
+
+    for (const p of particles) {
+      if (p.y < r) {
+        p.y = r;
+        p.vy = Math.abs(p.vy);
+      }
+      if (p.y > H-r) {
+        p.y = H-r;
+        p.vy = -Math.abs(p.vy);
+      }
+      if (p.x < r) {
+        p.x = r;
+        impulseLeft += 2*m*Math.abs(p.vx);
+        p.vx = Math.abs(p.vx);
+      }
+      if (p.x > xP-r) {
+        p.x = xP-r;
+        const u = p.vx - vP;
+        if (u > 0) {
+          impulseRight += 2*m*u;
+          const eBefore = 0.5*m*(p.vx*p.vx + p.vy*p.vy);
+          p.vx = vP - u;
+          const eAfter = 0.5*m*(p.vx*p.vx + p.vy*p.vy);
+          workMicro += (eAfter - eBefore);
+        } else {
+          p.vx = Math.min(p.vx, vP);
+        }
+      }
+    }
+
+    updateLocalPressures();
+
+    const damp = Number(dampSlider.value);
+    const F = (pRightSmooth - Pext) * H - damp * vP;
+    vP += (F / pistonMass) * dt;
+    xP += vP * dt;
+
+    if (xP < minX) { xP = minX; vP = Math.max(vP, 0); }
+    if (xP > maxX) { xP = maxX; vP = Math.min(vP, 0); }
+
+    for (const p of particles) {
+      if (p.x > xP-r) {
+        p.x = xP-r;
+        p.vx = Math.min(p.vx, vP - Math.abs(p.vx)*0.2);
+      }
+    }
+
+    // Optional heat bath: global velocity rescaling to maintain initial average kinetic temperature.
+    if (heatModeSelect.value === 'isothermal') {
+      const kBefore = kineticEnergy();
+      const targetK = N * initialTemp0;
+      if (kBefore > 1e-12) {
+        const scale = Math.sqrt(targetK / kBefore);
+        for (const p of particles) {
+          p.vx *= scale;
+          p.vy *= scale;
+        }
+        const kAfter = kineticEnergy();
+        heatExchange += (kAfter - kBefore);
+      }
+    }
+
+    recordThermoTrace();
+    if (trace.pL.length > traceLen) {
+      trace.pL.shift();
+      trace.pR.shift();
+      trace.vol.shift();
+      trace.wExt.shift();
+      trace.wMicro.shift();
+      trace.q.shift();
+      trace.dU.shift();
+    }
+
+    time += dt;
+  }
+
+  function drawSimulation() {
+    sctx.clearRect(0,0,simCanvas.width,simCanvas.height);
+
+    sctx.fillStyle = "rgba(173,216,230,0.12)";
+    sctx.fillRect(X(0), Y(H), X(xP)-X(0), DY(H));
+
+    sctx.strokeStyle = "#333";
+    sctx.lineWidth = 2;
+    sctx.beginPath();
+    sctx.moveTo(X(0), Y(0)); sctx.lineTo(X(xP), Y(0));
+    sctx.moveTo(X(0), Y(H)); sctx.lineTo(X(xP), Y(H));
+    sctx.moveTo(X(0), Y(0)); sctx.lineTo(X(0), Y(H));
+    sctx.stroke();
+
+    const px = X(xP);
+    sctx.fillStyle = "#555";
+    sctx.fillRect(px, Y(H)-6, 14, DY(H)+12);
+
+    sctx.setLineDash([5,5]);
+    sctx.strokeStyle = "rgba(0,0,0,0.18)";
+    sctx.beginPath();
+    sctx.moveTo(px+18, Y(0)); sctx.lineTo(X(maxX), Y(0));
+    sctx.moveTo(px+18, Y(H)); sctx.lineTo(X(maxX), Y(H));
+    sctx.stroke();
+    sctx.setLineDash([]);
+
+    const ay = Y(H/2);
+    const ax0 = Math.min(px+78, simCanvas.width-70);
+    sctx.strokeStyle = "#cc3333";
+    sctx.lineWidth = 3;
+    sctx.beginPath();
+    sctx.moveTo(ax0, ay);
+    sctx.lineTo(px+18, ay);
+    sctx.stroke();
+    sctx.beginPath();
+    sctx.moveTo(px+16, ay);
+    sctx.lineTo(px+30, ay-8);
+    sctx.lineTo(px+30, ay+8);
+    sctx.closePath();
+    sctx.fillStyle = "#cc3333";
+    sctx.fill();
+    sctx.font = "14px Arial";
+    sctx.fillText("恒外压", ax0-4, ay-13);
+
+    sctx.fillStyle = "#333";
+    sctx.font = "13px Arial";
+    const rr = Number(ratioSlider.value);
+    const dirText = rr < 0.98 ? "膨胀趋势" : (rr > 1.02 ? "压缩趋势" : "近似平衡");
+    sctx.fillText("Pext / P₀ = " + rr.toFixed(2) + "   " + dirText + "   N=" + N, X(0.15), Y(H)+45);
+
+    for (const p of particles) {
+      sctx.beginPath();
+      sctx.arc(X(p.x), Y(p.y), Math.max(2.5, DX(r)), 0, 2*Math.PI);
+      sctx.fillStyle = "#2b78e4";
+      sctx.fill();
+      sctx.strokeStyle = "rgba(0,0,0,0.18)";
+      sctx.stroke();
+    }
+  }
+
+  function drawHistogram() {
+    const W = histCanvas.width, C = histCanvas.height;
+    hctx.clearRect(0,0,W,C);
+    const padL=42, padR=10, padT=20, padB=28;
+    const pw=W-padL-padR, ph=C-padT-padB;
+    hctx.strokeStyle="#333";
+    hctx.lineWidth=1;
+    hctx.strokeRect(padL,padT,pw,ph);
+
+    const speeds = particles.map(p => Math.hypot(p.vx,p.vy));
+    const vmax = speedAxisMax;
+    const bins = 18;
+    const hist = Array(bins).fill(0);
+    for (const v of speeds) {
+      const k = Math.min(bins-1, Math.floor(Math.max(0, v)/vmax*bins));
+      hist[k]++;
+    }
+    const hmax = Math.max(1, ...hist);
+    for (let i=0; i<bins; i++) {
+      const x = padL + i*pw/bins;
+      const bh = hist[i]/hmax*ph;
+      hctx.fillStyle="rgba(43,120,228,0.75)";
+      hctx.fillRect(x+1, padT+ph-bh, pw/bins-2, bh);
+    }
+
+    const T = temperature();
+    let arr = [], maxF = 0;
+    for (let i=0; i<240; i++) {
+      const v = i/239*vmax;
+      const f = (v/Math.max(T,1e-8))*Math.exp(-v*v/(2*Math.max(T,1e-8)));
+      arr.push(f);
+      if (f > maxF) maxF = f;
+    }
+    hctx.beginPath();
+    for (let i=0; i<arr.length; i++) {
+      const x = padL + i/(arr.length-1)*pw;
+      const y = padT + ph - (arr[i]/(maxF||1))*ph*0.92;
+      if (i===0) hctx.moveTo(x,y); else hctx.lineTo(x,y);
+    }
+    hctx.strokeStyle="#666";
+    hctx.lineWidth=2;
+    hctx.stroke();
+
+    hctx.fillStyle="#222";
+    hctx.font="13px Arial";
+    hctx.fillText("速率分布", 10, 14);
+    hctx.fillText("v", W/2, C-8);
+    hctx.font="12px Arial";
+    hctx.fillStyle="#444";
+    hctx.fillText("0", padL-4, C-8);
+    hctx.fillText((vmax/2).toFixed(1), padL + pw/2 - 8, C-8);
+    hctx.fillText(vmax.toFixed(1), padL + pw - 12, C-8);
+  }
+
+  function drawTrace() {
+    const W = traceCanvas.width, C = traceCanvas.height;
+    tctx.clearRect(0,0,W,C);
+
+    const padL = 62, padR = 62, padT = 28, padB = 56;
+    const pw = W-padL-padR, ph = C-padT-padB;
+
+    // frame
+    tctx.strokeStyle="#333";
+    tctx.lineWidth=1;
+    tctx.strokeRect(padL,padT,pw,ph);
+
+    // light grid
+    tctx.strokeStyle="rgba(0,0,0,0.08)";
+    for (let i=1; i<4; i++) {
+      const y = padT + i*ph/4;
+      tctx.beginPath();
+      tctx.moveTo(padL, y);
+      tctx.lineTo(padL+pw, y);
+      tctx.stroke();
+    }
+
+    // axes labels
+    tctx.fillStyle="#222";
+    tctx.font="12px Arial";
+    tctx.fillText("压力", padL-50, padT-10);
+    tctx.fillText("体积", W-padR+12, padT-10);
+    tctx.fillText("时间", W/2 - 12, C-8);
+
+    // left axis ticks (pressure)
+    const pTicks = [0, pressureAxisMax/2, pressureAxisMax];
+    for (const pt of pTicks) {
+      const y = padT + ph - (pt/pressureAxisMax)*ph;
+      tctx.fillStyle="#444";
+      tctx.fillText(pt.toFixed(2), padL-48, y+4);
+      tctx.beginPath();
+      tctx.moveTo(padL-4, y);
+      tctx.lineTo(padL, y);
+      tctx.strokeStyle="#444";
+      tctx.stroke();
+    }
+
+    // right axis ticks (volume)
+    const vTicks = [volumeAxisMin, 0.5*(volumeAxisMin+volumeAxisMax), volumeAxisMax];
+    for (const vt of vTicks) {
+      const y = padT + ph - ((vt-volumeAxisMin)/(volumeAxisMax-volumeAxisMin))*ph;
+      tctx.fillStyle="#444";
+      tctx.fillText(vt.toFixed(1), W-padR+8, y+4);
+      tctx.beginPath();
+      tctx.moveTo(W-padR, y);
+      tctx.lineTo(W-padR+4, y);
+      tctx.strokeStyle="#444";
+      tctx.stroke();
+    }
+
+    function drawSeries(arr, color, mapper) {
+      tctx.beginPath();
+      for (let i=0; i<arr.length; i++) {
+        const x = padL + i/(traceLen-1)*pw;
+        const y = mapper(arr[i]);
+        if (i===0) tctx.moveTo(x, y); else tctx.lineTo(x, y);
+      }
+      tctx.strokeStyle = color;
+      tctx.lineWidth = 2.2;
+      tctx.stroke();
+    }
+
+    const pMap = val => padT + ph - Math.max(0, Math.min(1, val/pressureAxisMax))*ph;
+    const vMap = val => padT + ph - Math.max(0, Math.min(1, (val-volumeAxisMin)/(volumeAxisMax-volumeAxisMin)))*ph;
+
+    drawSeries(trace.pL, "#1b5e20", pMap);
+    drawSeries(trace.pR, "#8e24aa", pMap);
+    drawSeries(trace.vol, "#c62828", vMap);
+
+    // initial volume reference line
+    const yV0 = vMap(initialVolume0);
+    tctx.setLineDash([2,5]);
+    tctx.beginPath();
+    tctx.moveTo(padL, yV0);
+    tctx.lineTo(padL+pw, yV0);
+    tctx.strokeStyle="#f39c12";
+    tctx.lineWidth=1.8;
+    tctx.stroke();
+    tctx.setLineDash([]);
+
+    // external pressure line
+    const yExt = pMap(Pext);
+    tctx.setLineDash([6,4]);
+    tctx.beginPath();
+    tctx.moveTo(padL, yExt);
+    tctx.lineTo(padL+pw, yExt);
+    tctx.strokeStyle="#cc3333";
+    tctx.lineWidth=1.8;
+    tctx.stroke();
+    tctx.setLineDash([]);
+
+    // right-side V0 label
+    tctx.fillStyle="#b36b00";
+    tctx.font="12px Arial";
+    tctx.fillText("V₀", W-padR+8, yV0-4);
+
+    // Clean legend below plot, not overlapping data
+    const yL = C - 34;
+    tctx.fillStyle="#222";
+    tctx.font="12px Arial";
+
+    function legendLine(x, color, dash=false) {
+      if (dash) tctx.setLineDash([6,4]);
+      tctx.strokeStyle=color;
+      tctx.lineWidth=2.2;
+      tctx.beginPath();
+      tctx.moveTo(x, yL-4);
+      tctx.lineTo(x+22, yL-4);
+      tctx.stroke();
+      if (dash) tctx.setLineDash([]);
+    }
+
+    tctx.fillText("P左", 12, yL);
+    legendLine(42, "#1b5e20");
+    tctx.fillText("P活塞", 80, yL);
+    legendLine(128, "#8e24aa");
+    tctx.fillText("V", 166, yL);
+    legendLine(181, "#c62828");
+    tctx.fillText("Pₑₓₜ", 220, yL);
+    legendLine(255, "#cc3333", true);
+    tctx.fillText("V₀", 294, yL);
+    tctx.setLineDash([2,5]);
+    tctx.strokeStyle="#f39c12";
+    tctx.lineWidth=1.8;
+    tctx.beginPath();
+    tctx.moveTo(318, yL-4);
+    tctx.lineTo(340, yL-4);
+    tctx.stroke();
+    tctx.setLineDash([]);
+  }
+
+  function drawEnergy() {
+    const W = energyCanvas.width, C = energyCanvas.height;
+    ectx.clearRect(0,0,W,C);
+
+    const padL = 62, padR = 28, padT = 28, padB = 56;
+    const pw = W-padL-padR, ph = C-padT-padB;
+
+    ectx.strokeStyle="#333";
+    ectx.lineWidth=1;
+    ectx.strokeRect(padL,padT,pw,ph);
+
+    // grid and zero line
+    ectx.strokeStyle="rgba(0,0,0,0.08)";
+    for (let i=1; i<4; i++) {
+      const y = padT + i*ph/4;
+      ectx.beginPath();
+      ectx.moveTo(padL,y);
+      ectx.lineTo(padL+pw,y);
+      ectx.stroke();
+    }
+    const yZero = padT + ph/2;
+    ectx.strokeStyle="rgba(0,0,0,0.35)";
+    ectx.beginPath();
+    ectx.moveTo(padL,yZero);
+    ectx.lineTo(padL+pw,yZero);
+    ectx.stroke();
+
+    function yMap(val) {
+      const clipped = Math.max(-energyAxisAbsMax, Math.min(energyAxisAbsMax, val));
+      return padT + ph/2 - clipped/energyAxisAbsMax*ph/2;
+    }
+
+    function drawSeries(arr, color, dash=false) {
+      if (dash) ectx.setLineDash([6,4]);
+      ectx.beginPath();
+      for (let i=0; i<arr.length; i++) {
+        const x = padL + i/(traceLen-1)*pw;
+        const y = yMap(arr[i]);
+        if (i===0) ectx.moveTo(x,y); else ectx.lineTo(x,y);
+      }
+      ectx.strokeStyle=color;
+      ectx.lineWidth=2.2;
+      ectx.stroke();
+      if (dash) ectx.setLineDash([]);
+    }
+
+    drawSeries(trace.dU, "#111111");
+    drawSeries(trace.wExt, "#1f77b4");
+    drawSeries(trace.wMicro, "#00a6b4", true);
+    drawSeries(trace.q, "#f39c12");
+
+    // axis labels
+    ectx.fillStyle="#222";
+    ectx.font="12px Arial";
+    ectx.fillText("能量", padL-50, padT-10);
+    ectx.fillText("时间", W/2-12, C-8);
+
+    const ticks = [-energyAxisAbsMax, 0, energyAxisAbsMax];
+    for (const val of ticks) {
+      const y = yMap(val);
+      ectx.fillStyle="#444";
+      ectx.fillText(val.toFixed(1), padL-52, y+4);
+      ectx.beginPath();
+      ectx.moveTo(padL-4,y);
+      ectx.lineTo(padL,y);
+      ectx.strokeStyle="#444";
+      ectx.stroke();
+    }
+
+    // Clean legend below plot, not overlapping data
+    const yL = C - 34;
+    ectx.fillStyle="#222";
+    ectx.font="12px Arial";
+
+    function legendLine(x, color, dash=false) {
+      if (dash) ectx.setLineDash([6,4]);
+      ectx.strokeStyle=color;
+      ectx.lineWidth=2.2;
+      ectx.beginPath();
+      ectx.moveTo(x,yL-4);
+      ectx.lineTo(x+22,yL-4);
+      ectx.stroke();
+      if (dash) ectx.setLineDash([]);
+    }
+
+    ectx.fillText("ΔU", 14, yL);
+    legendLine(42, "#111111");
+    ectx.fillText("w外压", 82, yL);
+    legendLine(126, "#1f77b4");
+    ectx.fillText("w碰撞", 166, yL);
+    legendLine(214, "#00a6b4", true);
+    ectx.fillText("q", 254, yL);
+    legendLine(270, "#f39c12");
+  }
+
+  function updateStats() {
+    const T = temperature();
+    const V = volume();
+    const Pg = globalIdealPressure();
+    const diff = Math.abs(pLeftSmooth - pRightSmooth);
+    const mean = 0.5*(pLeftSmooth + pRightSmooth) + 1e-9;
+    const neq = diff / mean;
+    const slowPiston = Math.abs(vP) < 0.015;
+    const nearEq = neq < 0.15 && slowPiston;
+
+    stats.innerHTML = `
+      <strong>当前宏观量（教学定义）</strong><br>
+      时间：${time.toFixed(2)}<br>
+      体积：${V.toFixed(2)}，初始体积 V₀：${initialVolume0.toFixed(2)}<br>
+      动能温度估算：${T.toFixed(3)}<br>
+      理想气体式估算 <code>NkT/V</code>：${Pg.toFixed(3)}<br>
+      初始参考压强 P₀（预平衡后 NkT/V）：${initialP0.toFixed(3)}；局部压力标定系数：${pressureScale.toFixed(3)}<br>
+      粒子数：${N}<br>
+      ΔU：${deltaU().toFixed(3)}；w_ext：${workExternal().toFixed(3)}；w_coll：${workMicro.toFixed(3)}；q：${heatExchange.toFixed(3)}<br>
+      一律检验 ΔU-(q+w_coll)：${(deltaU()-heatExchange-workMicro).toFixed(3)}<br>
+      左侧局部压力估算：${pLeftSmooth.toFixed(3)}<br>
+      活塞附近局部压力估算：${pRightSmooth.toFixed(3)}<br>
+      外压：${Pext.toFixed(3)}<br>
+      外压/初始参考压强设定：${Number(ratioSlider.value).toFixed(2)}，${Number(ratioSlider.value) < 1 ? "膨胀驱动" : (Number(ratioSlider.value) > 1 ? "压缩驱动" : "近似平衡")}<br>
+      活塞速度：${vP.toFixed(4)}<br>
+      热边界条件：${heatModeSelect.value === 'adiabatic' ? '绝热，q=0' : '等温热浴（简化重标定），q 来自速度重标定'}
+    `;
+
+    if (nearEq) {
+      neqBox.className = "warn good";
+      neqBox.innerHTML = "目前接近平衡：不同区域的局部压力较接近，活塞运动很慢。此时可以近似用一个单一压强描述气体。";
+    } else {
+      neqBox.className = "warn bad";
+      neqBox.innerHTML = "目前明显非平衡：不同区域的局部压力不同，或活塞正在明显运动。无论是快速膨胀还是快速压缩，此时都不能把整个气体严格赋予一个单一热力学压强。";
+    }
+  }
+
+  function drawAll() {
+    drawSimulation();
+    drawTrace();
+    drawEnergy();
+    drawHistogram();
+    updateStats();
+  }
+
+  function animate() {
+    if (running) {
+      stepOne();
+      drawAll();
+    }
+    requestAnimationFrame(animate);
+  }
+
+  playBtn.onclick = () => { running = !running; };
+  stepBtn.onclick = () => { running = false; stepOne(); drawAll(); };
+  resetBtn.onclick = () => initialize();
+
+  weakExpBtn.onclick = () => { ratioSlider.value = 0.85; posSlider.value = 0.68; speedSlider.value = 0.12; updateLabels(); initialize(); };
+  strongExpBtn.onclick = () => { ratioSlider.value = 0.35; posSlider.value = 0.62; speedSlider.value = 0.08; updateLabels(); initialize(); };
+  nearEqBtn.onclick = () => { ratioSlider.value = 1.00; posSlider.value = 0.68; dampSlider.value = 0.4; speedSlider.value = 0.10; updateLabels(); initialize(); };
+  weakCompBtn.onclick = () => { ratioSlider.value = 1.25; posSlider.value = 0.72; speedSlider.value = 0.12; updateLabels(); initialize(); };
+  strongCompBtn.onclick = () => { ratioSlider.value = 2.00; posSlider.value = 0.78; speedSlider.value = 0.07; updateLabels(); initialize(); };
+
+  ratioSlider.oninput = updateLabels;
+  tempSlider.oninput = updateLabels;
+  posSlider.oninput = updateLabels;
+  posSlider.onchange = () => { updateLabels(); initialize(); };
+  dampSlider.oninput = updateLabels;
+  speedSlider.oninput = updateLabels;
+  heatModeSelect.onchange = () => initialize();
+
+  initialize();
+  animate();
+})();
+</script>
+</body>
+</html>
