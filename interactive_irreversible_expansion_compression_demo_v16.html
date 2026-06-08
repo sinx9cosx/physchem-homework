@@ -37,8 +37,6 @@
   .eq { font-family: "Times New Roman", serif; background: #eef3f7; border-radius: 5px; padding: 2px 6px; white-space: nowrap; }
 
   /* ===== 可逆过程模块样式 ===== */
-  .section-divider { max-width:1180px; border-top:3px solid #2b78e4; margin:32px 0 16px 0; padding-top:16px; }
-  .section-divider h2 { font-size:20px; color:#1a5276; margin:0 0 4px 0; }
   .wrap-rev { display:grid; grid-template-columns:770px 390px; gap:18px; align-items:start; max-width:1180px; }
   .data-table { width:100%; border-collapse:collapse; font-size:13px; margin:10px 0; }
   .data-table th { background:#eef3f7; padding:6px 10px; text-align:left; border:1px solid #ccd8e4; font-weight:bold; font-size:13px; }
@@ -570,6 +568,9 @@
       if (revVolumeWrapper) revVolumeWrapper.style.display = '';
       if (revExpCompBtns) revExpCompBtns.style.display = '';
       if (revIsochoricBtns) revIsochoricBtns.style.display = 'none';
+      document.querySelector('h1').textContent = '恒外压下气缸气体的不可逆膨胀与压缩：分子视角';
+      const noteEl = document.querySelector('.note');
+      if (noteEl) noteEl.innerHTML = '  这是一个二维硬球气体的教学演示。右侧灰色板是活塞，红色箭头表示恒定外压。  外压小于初始参考压强时发生膨胀，外压大于初始参考压强时发生压缩。  绿色和紫色曲线表示左侧区域与活塞附近区域的<strong>局部压力估算</strong>，用于说明非平衡过程中不同区域的压力可以不同。  下方过程图的纵轴尺度在一次演示中保持固定，不再随时间自动改变，因此更适合课堂观察。速率分布图的横轴也在一次演示中固定；过程图中另外加入了初始体积 V<sub>0</sub> 的参考线，便于比较"回到初始状态"与否。新版还加入功、热和内能变化的跟踪图，并在右侧说明各参数的教学计算方法。';
     } else {
       isobaricModeBtn.style.background = '#e0e0e0'; isobaricModeBtn.style.color = '#555';
       isochoricModeBtn.style.background = '#2b78e4'; isochoricModeBtn.style.color = '#fff';
@@ -587,6 +588,9 @@
       if (revVolumeWrapper) revVolumeWrapper.style.display = 'none';
       if (revExpCompBtns) revExpCompBtns.style.display = 'none';
       if (revIsochoricBtns) revIsochoricBtns.style.display = '';
+      document.querySelector('h1').textContent = '恒容下气缸气体的不可逆变温过程';
+      const noteEl = document.querySelector('.note');
+      if (noteEl) noteEl.innerHTML = '  这是一个二维硬球气体的教学演示。右侧灰色板是固定活塞，体积始终保持不变。通过恒温器逐步调节气体动能温度至目标值 T<sub>target</sub>：目标温度高于初始温度时发生加热，目标温度低于初始温度时发生冷却。绿色和紫色曲线表示左侧区域与活塞附近区域的局部压力估算，恒容下有 P = NkT/V<sub>0</sub>，压强随温度同步变化。下方过程图的纵轴尺度在一次演示中保持固定，速率分布图的横轴也在一次演示中固定；过程图中加入了恒容线 V = V<sub>0</sub> 的参考标识。能量跟踪图中，恒容下 w ≡ 0，ΔU = q<sub>V</sub>，内能变化完全由热交换引起。右侧说明各参数的教学计算方法。';
     }
 
     resetReversible();
@@ -2363,9 +2367,7 @@
 </script>
 
 <!-- ===== 可逆准静态过程模块 ===== -->
-<div class="section-divider">
-  <h2>第二部分：可逆准静态过程 — 与不可逆过程的对比</h2>
-</div>
+<h1>第二部分：可逆准静态过程 — 与不可逆过程的对比</h1>
 
 <div class="lecture">
   <h2>可逆过程理论基础</h2>
@@ -2387,24 +2389,7 @@
     </div>
   </details>
   <details>
-    <summary>3. 熵与热力学第二定律</summary>
-    <div class="lecture-body">
-      <p>熵 <span class="eq">S</span> 是状态函数。可逆过程中系统的熵变由可逆热温商给出：</p>
-      <p style="text-align:center"><span class="eq">dS<sub>sys</sub> = δq<sub>rev</sub> / T</span></p>
-      <p>环境的熵变由实际热效应决定：<span class="eq">dS<sub>surr</sub> = -q<sub>actual</sub> / T<sub>bath</sub></span>。</p>
-      <p><strong>热力学第二定律</strong>：<span class="eq">ΔS<sub>univ</sub> = ΔS<sub>sys</sub> + ΔS<sub>surr</sub> ≥ 0</span>。可逆过程取等号（ΔS<sub>univ</sub> = 0），不可逆过程取大于号。</p>
-      <p>对于等温过程：<span class="eq">ΔS<sub>sys</sub> = Nk ln(V<sub>f</sub>/V<sub>i</sub>)</span>（二维）。系统熵变完全由状态决定，与路径无关。但环境熵变依赖于实际路径的传热量。</p>
-    </div>
-  </details>
-  <details>
-    <summary>4. PV 图上的比较：可逆 vs 不可逆</summary>
-    <div class="lecture-body">
-      <p>在 PV 图上，可逆等温过程对应一条光滑曲线 <span class="eq">P = NkT/V</span>，而恒外压不可逆过程对应一条水平线 <span class="eq">P = P<sub>ext</sub></span>（如果只看外压）或一条不规则的折线（如果看局部压力）。</p>
-      <p>曲线下的面积代表功的大小。可逆曲线下的面积更大（膨胀时），体现了最大功原理。压缩时可逆曲线下的面积更小，表示外界需要做的功最少。</p>
-    </div>
-  </details>
-  <details>
-    <summary>5. 弛豫步数与可逆性的关系（新增）</summary>
+    <summary>3. 弛豫步数与可逆性的关系</summary>
     <div class="lecture-body">
       <p>在本模拟中，&quot;弛豫步数&quot;控制活塞每移动一步后，粒子有多少时间来重新达到局部平衡。弛豫步数越多 → 过程越慢 → 越接近可逆极限。</p>
       <p><strong>学生实验建议：</strong></p>
