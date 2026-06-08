@@ -873,6 +873,307 @@
     }
   }
 
+  function drawRevSimulation() {
+    if (!revSimCanvas || !revsctx) return;
+    revsctx.clearRect(0, 0, revSimCanvas.width, revSimCanvas.height);
+
+    // 气缸背景
+    revsctx.fillStyle = "rgba(173,216,230,0.12)";
+    revsctx.fillRect(X(0), Y(H), X(revSim.xP) - X(0), DY(H));
+
+    // 气缸壁
+    revsctx.strokeStyle = "#333";
+    revsctx.lineWidth = 2;
+    revsctx.beginPath();
+    revsctx.moveTo(X(0), Y(0)); revsctx.lineTo(X(revSim.xP), Y(0));
+    revsctx.moveTo(X(0), Y(H)); revsctx.lineTo(X(revSim.xP), Y(H));
+    revsctx.moveTo(X(0), Y(0)); revsctx.lineTo(X(0), Y(H));
+    revsctx.stroke();
+
+    // 活塞
+    const px = X(revSim.xP);
+    revsctx.fillStyle = "#555";
+    revsctx.fillRect(px, Y(H) - 6, 14, DY(H) + 12);
+
+    // 活塞右侧虚线
+    revsctx.setLineDash([5, 5]);
+    revsctx.strokeStyle = "rgba(0,0,0,0.18)";
+    revsctx.beginPath();
+    revsctx.moveTo(px + 18, Y(0)); revsctx.lineTo(X(maxX), Y(0));
+    revsctx.moveTo(px + 18, Y(H)); revsctx.lineTo(X(maxX), Y(H));
+    revsctx.stroke();
+    revsctx.setLineDash([]);
+
+    // 方向箭头（指示膨胀/压缩）
+    const ay = Y(H / 2);
+    const isExp = revSim.xP_target > revSim.xP_initial;
+    if (isExp) {
+      // 向右箭头（膨胀）
+      revsctx.strokeStyle = "#2b78e4";
+      revsctx.lineWidth = 3;
+      revsctx.beginPath();
+      revsctx.moveTo(px + 24, ay);
+      revsctx.lineTo(px + 70, ay);
+      revsctx.stroke();
+      revsctx.beginPath();
+      revsctx.moveTo(px + 56, ay - 8);
+      revsctx.lineTo(px + 70, ay);
+      revsctx.lineTo(px + 56, ay + 8);
+      revsctx.closePath();
+      revsctx.fillStyle = "#2b78e4";
+      revsctx.fill();
+      revsctx.font = "13px Arial";
+      revsctx.fillText("准静态位移", px + 24, ay - 13);
+    } else {
+      // 向左箭头（压缩）
+      revsctx.strokeStyle = "#e74c3c";
+      revsctx.lineWidth = 3;
+      revsctx.beginPath();
+      revsctx.moveTo(px - 24, ay);
+      revsctx.lineTo(px - 70, ay);
+      revsctx.stroke();
+      revsctx.beginPath();
+      revsctx.moveTo(px - 56, ay - 8);
+      revsctx.lineTo(px - 70, ay);
+      revsctx.lineTo(px - 56, ay + 8);
+      revsctx.closePath();
+      revsctx.fillStyle = "#e74c3c";
+      revsctx.fill();
+      revsctx.font = "13px Arial";
+      revsctx.fillText("准静态位移", px - 130, ay - 13);
+    }
+
+    // 步数和体积信息
+    revsctx.fillStyle = "#333";
+    revsctx.font = "13px Arial";
+    const targetRatio = revSim.xP_target / Math.max(revSim.xP_initial, 0.01);
+    const dirText = targetRatio > 1.02 ? "膨胀" : (targetRatio < 0.98 ? "压缩" : "近似等体积");
+    revsctx.fillText(
+      "步数 " + revSim.currentStep + "/" + revSim.totalSteps +
+      "  目标 V/V₀=" + targetRatio.toFixed(2) + " (" + dirText + ")" +
+      "  N=" + revSim.N,
+      X(0.15), Y(H) + 45
+    );
+
+    // 粒子
+    for (const p of revSim.particles) {
+      revsctx.beginPath();
+      revsctx.arc(X(p.x), Y(p.y), Math.max(2.5, DX(r)), 0, 2 * Math.PI);
+      revsctx.fillStyle = "#2b78e4";
+      revsctx.fill();
+      revsctx.strokeStyle = "rgba(0,0,0,0.18)";
+      revsctx.stroke();
+    }
+  }
+
+  function drawRevTrace() {
+    if (!revTraceCanvas || !revtctx) return;
+    const W = revTraceCanvas.width, C = revTraceCanvas.height;
+    revtctx.clearRect(0, 0, W, C);
+
+    const padL = 62, padR = 62, padT = 28, padB = 56;
+    const pw = W - padL - padR, ph = C - padT - padB;
+
+    revtctx.strokeStyle = '#333';
+    revtctx.lineWidth = 1;
+    revtctx.strokeRect(padL, padT, pw, ph);
+
+    revtctx.strokeStyle = 'rgba(0,0,0,0.08)';
+    for (let i = 1; i < 4; i++) {
+      const y = padT + (i * ph) / 4;
+      revtctx.beginPath();
+      revtctx.moveTo(padL, y);
+      revtctx.lineTo(padL + pw, y);
+      revtctx.stroke();
+    }
+
+    revtctx.fillStyle = '#222';
+    revtctx.font = '12px Arial';
+    revtctx.fillText('压力', padL - 50, padT - 10);
+    revtctx.fillText('体积', W - padR + 12, padT - 10);
+    revtctx.fillText('时间', W / 2 - 12, C - 8);
+
+    const pTicks = [0, revPressureAxisMax / 2, revPressureAxisMax];
+    for (const pt of pTicks) {
+      const y = padT + ph - (pt / revPressureAxisMax) * ph;
+      revtctx.fillStyle = '#444';
+      revtctx.fillText(pt.toFixed(2), padL - 48, y + 4);
+      revtctx.beginPath();
+      revtctx.moveTo(padL - 4, y);
+      revtctx.lineTo(padL, y);
+      revtctx.strokeStyle = '#444';
+      revtctx.stroke();
+    }
+
+    const vTicks = [volumeAxisMin, 0.5 * (volumeAxisMin + volumeAxisMax), volumeAxisMax];
+    for (const vt of vTicks) {
+      const y = padT + ph - ((vt - volumeAxisMin) / (volumeAxisMax - volumeAxisMin)) * ph;
+      revtctx.fillStyle = '#444';
+      revtctx.fillText(vt.toFixed(1), W - padR + 8, y + 4);
+      revtctx.beginPath();
+      revtctx.moveTo(W - padR, y);
+      revtctx.lineTo(W - padR + 4, y);
+      revtctx.strokeStyle = '#444';
+      revtctx.stroke();
+    }
+
+    function drawSeries(arr, color, mapper) {
+      if (arr.length < 2) return;
+      revtctx.beginPath();
+      for (let i = 0; i < arr.length; i++) {
+        const x = padL + (i / Math.max(arr.length - 1, 1)) * pw;
+        const y = mapper(arr[i]);
+        if (i === 0) revtctx.moveTo(x, y);
+        else revtctx.lineTo(x, y);
+      }
+      revtctx.strokeStyle = color;
+      revtctx.lineWidth = 2.2;
+      revtctx.stroke();
+    }
+
+    var pMap = function(val) { return padT + ph - Math.max(0, Math.min(1, val / revPressureAxisMax)) * ph; };
+    var vMap = function(val) { return padT + ph - Math.max(0, Math.min(1, (val - volumeAxisMin) / (volumeAxisMax - volumeAxisMin))) * ph; };
+
+    drawSeries(revSim.trace.pGas, '#2b78e4', pMap);
+    drawSeries(revSim.trace.vol, '#c62828', vMap);
+
+    var yV0 = vMap(revSim.initialVolume0);
+    revtctx.setLineDash([2, 5]);
+    revtctx.beginPath();
+    revtctx.moveTo(padL, yV0);
+    revtctx.lineTo(padL + pw, yV0);
+    revtctx.strokeStyle = '#f39c12';
+    revtctx.lineWidth = 1.8;
+    revtctx.stroke();
+    revtctx.setLineDash([]);
+
+    revtctx.fillStyle = '#b36b00';
+    revtctx.font = '12px Arial';
+    revtctx.fillText('V₀', W - padR + 8, yV0 - 4);
+
+    var yL = C - 34;
+    revtctx.fillStyle = '#222';
+    revtctx.font = '12px Arial';
+
+    function legendLine(x, color, dash) {
+      if (dash) revtctx.setLineDash([6, 4]);
+      revtctx.strokeStyle = color;
+      revtctx.lineWidth = 2.2;
+      revtctx.beginPath();
+      revtctx.moveTo(x, yL - 4);
+      revtctx.lineTo(x + 22, yL - 4);
+      revtctx.stroke();
+      if (dash) revtctx.setLineDash([]);
+    }
+
+    revtctx.fillText('P_gas', 12, yL);
+    legendLine(56, '#2b78e4');
+    revtctx.fillText('V', 128, yL);
+    legendLine(143, '#c62828');
+    revtctx.fillText('V₀', 190, yL);
+    revtctx.setLineDash([2, 5]);
+    revtctx.strokeStyle = '#f39c12';
+    revtctx.lineWidth = 1.8;
+    revtctx.beginPath();
+    revtctx.moveTo(214, yL - 4);
+    revtctx.lineTo(236, yL - 4);
+    revtctx.stroke();
+    revtctx.setLineDash([]);
+  }
+
+  function drawRevEnergy() {
+    if (!revEnergyCanvas || !revectx) return;
+    const W = revEnergyCanvas.width, C = revEnergyCanvas.height;
+    revectx.clearRect(0, 0, W, C);
+
+    const padL = 62, padR = 28, padT = 28, padB = 56;
+    const pw = W - padL - padR, ph = C - padT - padB;
+
+    revectx.strokeStyle = '#333';
+    revectx.lineWidth = 1;
+    revectx.strokeRect(padL, padT, pw, ph);
+
+    revectx.strokeStyle = 'rgba(0,0,0,0.08)';
+    for (let i = 1; i < 4; i++) {
+      const y = padT + (i * ph) / 4;
+      revectx.beginPath();
+      revectx.moveTo(padL, y);
+      revectx.lineTo(padL + pw, y);
+      revectx.stroke();
+    }
+    var yZero = padT + ph / 2;
+    revectx.strokeStyle = 'rgba(0,0,0,0.35)';
+    revectx.beginPath();
+    revectx.moveTo(padL, yZero);
+    revectx.lineTo(padL + pw, yZero);
+    revectx.stroke();
+
+    function yMap(val) {
+      var clipped = Math.max(-revEnergyAxisAbsMax, Math.min(revEnergyAxisAbsMax, val));
+      return padT + ph / 2 - (clipped / revEnergyAxisAbsMax) * (ph / 2);
+    }
+
+    function drawSeries(arr, color, dash) {
+      if (arr.length < 2) return;
+      if (dash) revectx.setLineDash([6, 4]);
+      revectx.beginPath();
+      for (let i = 0; i < arr.length; i++) {
+        var x = padL + (i / Math.max(arr.length - 1, 1)) * pw;
+        var y = yMap(arr[i]);
+        if (i === 0) revectx.moveTo(x, y);
+        else revectx.lineTo(x, y);
+      }
+      revectx.strokeStyle = color;
+      revectx.lineWidth = 2.2;
+      revectx.stroke();
+      if (dash) revectx.setLineDash([]);
+    }
+
+    drawSeries(revSim.trace.dU, '#111111');
+    drawSeries(revSim.trace.wRev, '#1f77b4');
+    drawSeries(revSim.trace.qRev, '#f39c12');
+
+    revectx.fillStyle = '#222';
+    revectx.font = '12px Arial';
+    revectx.fillText('能量', padL - 50, padT - 10);
+    revectx.fillText('时间', W / 2 - 12, C - 8);
+
+    var ticks = [-revEnergyAxisAbsMax, 0, revEnergyAxisAbsMax];
+    for (var i = 0; i < ticks.length; i++) {
+      var val = ticks[i];
+      var y = yMap(val);
+      revectx.fillStyle = '#444';
+      revectx.fillText(val.toFixed(1), padL - 52, y + 4);
+      revectx.beginPath();
+      revectx.moveTo(padL - 4, y);
+      revectx.lineTo(padL, y);
+      revectx.strokeStyle = '#444';
+      revectx.stroke();
+    }
+
+    var yL = C - 34;
+    revectx.fillStyle = '#222';
+    revectx.font = '12px Arial';
+
+    function legendLine(x, color, dash) {
+      if (dash) revectx.setLineDash([6, 4]);
+      revectx.strokeStyle = color;
+      revectx.lineWidth = 2.2;
+      revectx.beginPath();
+      revectx.moveTo(x, yL - 4);
+      revectx.lineTo(x + 22, yL - 4);
+      revectx.stroke();
+      if (dash) revectx.setLineDash([]);
+    }
+
+    revectx.fillText('ΔU', 14, yL);
+    legendLine(42, '#111111');
+    revectx.fillText('w_rev', 82, yL);
+    legendLine(130, '#1f77b4');
+    revectx.fillText('q', 182, yL);
+    legendLine(198, '#f39c12');
+  }
+
   function drawHistogram() {
     const W = histCanvas.width, C = histCanvas.height;
     hctx.clearRect(0,0,W,C);
@@ -1210,15 +1511,11 @@
     }
     if (rev_running) {
       stepReversible();
+      drawRevSimulation();
     }
-    if (rev_active || irrev_pathRecorded) {
-      drawPVCompare();
-      drawEntropyChart();
-    }
-    if (workFillAnimating) {
-      workFillProgress = Math.min(1, workFillProgress + 0.016);
-      if (workFillProgress >= 1) workFillAnimating = false;
-      drawPVCompare();
+    if (rev_active) {
+      drawRevTrace();
+      drawRevEnergy();
     }
     requestAnimationFrame(animate);
   }
@@ -1239,14 +1536,16 @@
   posSlider.onchange = () => { updateLabels(); initialize(); };
   dampSlider.oninput = updateLabels;
   speedSlider.oninput = updateLabels;
-  heatModeSelect.onchange = () => initialize();
+  heatModeSelect.onchange = () => { initialize(); resetReversible(); };
 
   // --- 可逆过程状态变量（必须在 animate() 调用前声明） ---
   let rev_active = false;
   let rev_running = false;
-  let irrev_pathRecorded = false;
-  let workFillProgress = 0;
-  let workFillAnimating = false;
+  let revSimCanvas = null, revsctx = null;
+  let revTraceCanvas = null, revtctx = null;
+  let revEnergyCanvas = null, revectx = null;
+  let revPressureAxisMax = 3.0;
+  let revEnergyAxisAbsMax = 5.0;
 
   initialize();
   animate();
@@ -1254,22 +1553,21 @@
   /* ===== 可逆过程模块 ===== */
 
   // --- 可逆过程 DOM 引用（延迟初始化，因元素在 script 标签之后） ---
-  let pvCompareCanvas = null, pvctx = null;
-  let entropyCanvas = null, sctx2 = null;
   let revTargetRatioSlider = null, revStepsSlider = null;
   let revTargetRatioVal = null, revStepsVal = null;
   let revExpBtn = null, revCompBtn = null, revResetBtn = null;
   let revNearEqBtn = null, revFastBtn = null, revUltraSlowBtn = null;
   let revRelaxSlider = null, revThermoRateSlider = null;
   let revRelaxVal = null, revThermoRateVal = null;
-  let recordIrrevBtn = null;
-  let revStatsDiv = null, comparisonTableDiv = null;
+  let revStatsDiv = null;
 
   function initRevDOM() {
-    pvCompareCanvas = document.getElementById('pvCompareCanvas');
-    if (pvCompareCanvas) pvctx = pvCompareCanvas.getContext('2d');
-    entropyCanvas = document.getElementById('entropyCanvas');
-    if (entropyCanvas) sctx2 = entropyCanvas.getContext('2d');
+    revSimCanvas = document.getElementById('revSimCanvas');
+    if (revSimCanvas) revsctx = revSimCanvas.getContext('2d');
+    revTraceCanvas = document.getElementById('revTraceCanvas');
+    if (revTraceCanvas) revtctx = revTraceCanvas.getContext('2d');
+    revEnergyCanvas = document.getElementById('revEnergyCanvas');
+    if (revEnergyCanvas) revectx = revEnergyCanvas.getContext('2d');
     revTargetRatioSlider = document.getElementById('revTargetRatioSlider');
     revStepsSlider = document.getElementById('revStepsSlider');
     revTargetRatioVal = document.getElementById('revTargetRatioVal');
@@ -1284,9 +1582,7 @@
     revNearEqBtn = document.getElementById('revNearEqBtn');
     revFastBtn = document.getElementById('revFastBtn');
     revUltraSlowBtn = document.getElementById('revUltraSlowBtn');
-    recordIrrevBtn = document.getElementById('recordIrrevBtn');
     revStatsDiv = document.getElementById('revStats');
-    comparisonTableDiv = document.getElementById('comparisonTable');
   }
 
   // --- 可逆过程独立 MD 模拟对象（替代旧解析变量） ---
@@ -1308,16 +1604,9 @@
     initialVolume0: 0,
     initialEnergy0: 0,
     initialTemp0: 0,
-    cum_dS_sys: 0,
-    cum_dS_surr: 0,
-    cum_dS_univ: 0,
     thermostatRate: 0.3,
-    trace: { vol:[], pGas:[], wRev:[], qRev:[], dU:[], dS_sys:[], dS_surr:[], dS_univ:[] },
+    trace: { vol:[], pGas:[], wRev:[], qRev:[], dU:[] },
   };
-
-  // 不可逆路径记录（用于对比）
-  let irrev_path = { vol:[], pGas:[], w:[], q:[], dU:[] };
-  let irrev_Pext = 0;
 
   // --- revSim 辅助函数 ---
   function revKineticEnergy() {
@@ -1412,10 +1701,9 @@
 
   // --- revSim 初始化和预平衡 ---
   function initRevSim() {
-    const T0 = Number(tempSlider.value);
-    revSim.initialTemp0 = T0;
-    revSim.initialVolume0 = xMax * Number(posSlider.value) * H;
-    revSim.xP_initial = revSim.initialVolume0 / H;
+    revSim.initialTemp0 = initialTemp0;
+    revSim.xP_initial = xP;
+    revSim.initialVolume0 = revSim.xP_initial * H;
 
     const targetRatio = Number(revTargetRatioSlider.value);
     const targetXP = Math.min(maxX, Math.max(minX, revSim.xP_initial * targetRatio));
@@ -1444,8 +1732,8 @@
 
     let mvx = 0, mvy = 0;
     for (const p of revSim.particles) {
-      p.vx = randn() * Math.sqrt(T0);
-      p.vy = randn() * Math.sqrt(T0);
+      p.vx = randn() * Math.sqrt(initialTemp0);
+      p.vy = randn() * Math.sqrt(initialTemp0);
       mvx += p.vx; mvy += p.vy;
     }
     mvx /= revSim.N; mvy /= revSim.N;
@@ -1454,7 +1742,7 @@
       p.vy -= mvy;
     }
 
-    preEquilibrateRevSim(300);
+    preEquilibrateRevSim(450);
 
     revSim.initialEnergy0 = revKineticEnergy();
     revSim.currentT = revSim.initialTemp0;
@@ -1463,21 +1751,22 @@
     revSim.workMicro = 0;
     revSim.heatExchange = 0;
     revSim.currentStep = 0;
-    revSim.cum_dS_sys = 0;
-    revSim.cum_dS_surr = 0;
-    revSim.cum_dS_univ = 0;
 
-    revSim.trace = { vol:[], pGas:[], wRev:[], qRev:[], dU:[], dS_sys:[], dS_surr:[], dS_univ:[] };
+    revSim.trace = { vol:[], pGas:[], wRev:[], qRev:[], dU:[] };
     for (let i = 0; i < 3; i++) {
       revSim.trace.vol.push(revSim.initialVolume0);
       revSim.trace.pGas.push(revSim.currentP);
       revSim.trace.wRev.push(0);
       revSim.trace.qRev.push(0);
       revSim.trace.dU.push(0);
-      revSim.trace.dS_sys.push(0);
-      revSim.trace.dS_surr.push(0);
-      revSim.trace.dS_univ.push(0);
     }
+
+    revPressureAxisMax = Math.max(2.8 * revSim.currentP, 0.8);
+    revEnergyAxisAbsMax = Math.max(
+      Math.abs(revSim.N * revSim.initialTemp0 * Math.log(revSim.xP_target / Math.max(revSim.xP_initial, 1e-8))),
+      0.8 * revSim.initialEnergy0,
+      3.0
+    );
 
     rev_active = true;
   }
@@ -1488,23 +1777,17 @@
     revSim.trace.wRev.push(revSim.workMicro);
     revSim.trace.qRev.push(revSim.heatExchange);
     revSim.trace.dU.push(revDeltaU());
-    revSim.trace.dS_sys.push(revSim.cum_dS_sys);
-    revSim.trace.dS_surr.push(revSim.cum_dS_surr);
-    revSim.trace.dS_univ.push(revSim.cum_dS_univ);
   }
 
   // --- 核心 MD 步进函数（替代旧解析 stepReversible） ---
   function stepReversible() {
     if (revSim.currentStep >= revSim.totalSteps) {
       rev_running = false;
-      if (irrev_pathRecorded && !workFillAnimating) {
-        workFillAnimating = true;
-        workFillProgress = 0;
-      }
       return;
     }
 
-    const dtMicro = baseDt * 0.3;
+    const speedFactor = Math.max(Number(speedSlider.value), 0.03);
+    const dtMicro = baseDt * Math.min(speedFactor, 0.5);
     const isIso = (heatModeSelect.value === 'isothermal');
 
     // 阶段 1：微移活塞
@@ -1532,30 +1815,15 @@
     revSim.currentT = revTemperature();
     revSim.currentP = revSim.N * revSim.currentT / Math.max(revSim.currentVolume, 1e-8);
 
-    const Vf = revSim.currentVolume;
-    const Vi = revSim.initialVolume0;
-    const Tf = revSim.currentT;
-    const Ti = revSim.initialTemp0;
-
-    if (isIso) {
-      revSim.cum_dS_sys = revSim.N * Math.log(Math.max(Vf, 1e-8) / Math.max(Vi, 1e-8));
-    } else {
-      revSim.cum_dS_sys = revSim.N * Math.log(Math.max(Tf, 1e-8) / Math.max(Ti, 1e-8))
-                        + revSim.N * Math.log(Math.max(Vf, 1e-8) / Math.max(Vi, 1e-8));
-    }
-    revSim.cum_dS_surr = -revSim.heatExchange / Math.max(revSim.initialTemp0, 1e-8);
-    revSim.cum_dS_univ = revSim.cum_dS_sys + revSim.cum_dS_surr;
-
     recordRevTrace();
     revSim.currentStep++;
-
-    if (rev_active) updateRevStats();
   }
 
   function runReversible() {
-    if (!rev_active) {
-      initRevSim();
+    if (rev_active || rev_running) {
+      resetReversible();
     }
+    initRevSim();
     rev_running = true;
   }
 
@@ -1568,507 +1836,16 @@
     revSim.currentP = 0;
     revSim.workMicro = 0;
     revSim.heatExchange = 0;
-    revSim.cum_dS_sys = 0;
-    revSim.cum_dS_surr = 0;
-    revSim.cum_dS_univ = 0;
-    revSim.trace = { vol:[], pGas:[], wRev:[], qRev:[], dU:[], dS_sys:[], dS_surr:[], dS_univ:[] };
-    workFillProgress = 0;
-    workFillAnimating = false;
+    revSim.trace = { vol:[], pGas:[], wRev:[], qRev:[], dU:[] };
     if (revStatsDiv) revStatsDiv.innerHTML = '<span class="label">可逆过程已重置。点击"开始可逆膨胀"或"开始可逆压缩"启动。</span>';
-    if (comparisonTableDiv) comparisonTableDiv.innerHTML = '';
-    drawPVCompare();
-    drawEntropyChart();
+    if (revSimCanvas && revsctx) {
+      revsctx.clearRect(0, 0, revSimCanvas.width, revSimCanvas.height);
+    }
+    if (revTraceCanvas && revtctx) revtctx.clearRect(0, 0, revTraceCanvas.width, revTraceCanvas.height);
+    if (revEnergyCanvas && revectx) revectx.clearRect(0, 0, revEnergyCanvas.width, revEnergyCanvas.height);
   }
 
-  // --- 不可逆路径记录 ---
-  function recordIrrevPathForComparison() {
-    irrev_path.vol = trace.vol.slice();
-    irrev_path.pGas = trace.pR.slice(); // 用活塞侧压力作为气体压力估算
-    irrev_path.w = trace.wExt.slice();
-    irrev_path.q = trace.q.slice();
-    irrev_path.dU = trace.dU.slice();
-    irrev_Pext = Pext;
-    irrev_pathRecorded = true;
 
-    // 如果可逆过程已完成，启动功填充动画
-    if (rev_active && revSim.currentStep >= revSim.totalSteps && !workFillAnimating) {
-      workFillAnimating = true;
-      workFillProgress = 0;
-    }
-  }
-
-  // --- PV 比较图 ---
-  function drawPVCompare() {
-    if (!pvCompareCanvas) initRevDOM();
-    if (!pvCompareCanvas || !pvctx) return;
-    const ctx = pvctx;
-    const W = pvCompareCanvas.width, C = pvCompareCanvas.height;
-    ctx.clearRect(0, 0, W, C);
-
-    const padL = 62, padR = 30, padT = 28, padB = 48;
-    const pw = W - padL - padR, ph = C - padT - padB;
-
-    // 坐标框
-    ctx.strokeStyle = '#333';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(padL, padT, pw, ph);
-
-    // 确定坐标范围
-    const V_min = volumeAxisMin;
-    const V_max = volumeAxisMax;
-    const V_range = V_max - V_min;
-
-    // 压力范围：使用当前运行的 pressureAxisMax，或从数据估计
-    let P_max = pressureAxisMax;
-    if (revSim.trace.vol.length > 0) {
-      let maxP = 0;
-      for (const p of revSim.trace.pGas) { if (p > maxP) maxP = p; }
-      if (maxP > P_max) P_max = maxP * 1.2;
-    }
-    if (irrev_pathRecorded && irrev_path.pGas.length > 0) {
-      let maxP = 0;
-      for (const p of irrev_path.pGas) { if (p > maxP) maxP = p; }
-      if (maxP > P_max) P_max = maxP * 1.2;
-    }
-    P_max = Math.max(P_max, 0.5);
-
-    function xV(v) { return padL + ((v - V_min) / V_range) * pw; }
-    function yP(p) { return padT + ph - (p / P_max) * ph; }
-
-    // 浅色网格
-    ctx.strokeStyle = 'rgba(0,0,0,0.07)';
-    for (let i = 1; i < 5; i++) {
-      const y = padT + (i * ph) / 5;
-      ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(padL + pw, y); ctx.stroke();
-    }
-    for (let i = 1; i < 5; i++) {
-      const x = padL + (i * pw) / 5;
-      ctx.beginPath(); ctx.moveTo(x, padT); ctx.lineTo(x, padT + ph); ctx.stroke();
-    }
-
-    // 轴标签
-    ctx.fillStyle = '#222';
-    ctx.font = '12px Arial';
-    ctx.fillText('体积 V', W / 2 - 16, C - 6);
-    ctx.fillText('压力 P', padL - 52, padT - 10);
-
-    // 刻度
-    const vTicks = [V_min, V_min + V_range * 0.25, V_min + V_range * 0.5, V_min + V_range * 0.75, V_max];
-    for (const vt of vTicks) {
-      const x = xV(vt);
-      ctx.fillStyle = '#555';
-      ctx.fillText(vt.toFixed(1), x - 18, C - 28);
-      ctx.beginPath(); ctx.moveTo(x, padT + ph); ctx.lineTo(x, padT + ph + 4);
-      ctx.strokeStyle = '#555'; ctx.stroke();
-    }
-    const pTicks = [0, P_max * 0.25, P_max * 0.5, P_max * 0.75, P_max];
-    for (const pt of pTicks) {
-      const y = yP(pt);
-      ctx.fillStyle = '#555';
-      ctx.fillText(pt.toFixed(2), padL - 52, y + 4);
-      ctx.beginPath(); ctx.moveTo(padL - 4, y); ctx.lineTo(padL, y);
-      ctx.strokeStyle = '#555'; ctx.stroke();
-    }
-
-    // 灰色参考曲线：等温 P = NkT/V
-    const Tref = rev_active ? revSim.initialTemp0 : initialTemp0;
-    const Nref = N;
-    ctx.setLineDash([5, 5]);
-    ctx.beginPath();
-    let firstRef = true;
-    for (let i = 0; i <= 300; i++) {
-      const Vref = V_min + (i / 300) * V_range;
-      const Pref = Nref * Tref / Math.max(Vref, 1e-8);
-      const x = xV(Vref);
-      const y = yP(Pref);
-      if (firstRef) { ctx.moveTo(x, y); firstRef = false; }
-      else { ctx.lineTo(x, y); }
-    }
-    ctx.strokeStyle = 'rgba(128,128,128,0.5)';
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
-    ctx.setLineDash([]);
-
-    // 灰色参考曲线：绝热 PV^γ = const, γ=2 for 2D
-    const Vref0 = rev_active ? revSim.initialVolume0 : initialVolume0;
-    const Pref0 = rev_active ? (revSim.N * revSim.initialTemp0 / Math.max(revSim.initialVolume0, 1e-8)) : initialP0;
-    const gamma = 2;
-    const adiabConst = Pref0 * Math.pow(Vref0, gamma);
-    ctx.setLineDash([2, 4]);
-    ctx.beginPath();
-    firstRef = true;
-    for (let i = 0; i <= 300; i++) {
-      const Vref = V_min + (i / 300) * V_range;
-      const Pref_adiab = adiabConst / Math.pow(Math.max(Vref, 1e-8), gamma);
-      const x = xV(Vref);
-      const y = yP(Pref_adiab);
-      if (firstRef) { ctx.moveTo(x, y); firstRef = false; }
-      else { ctx.lineTo(x, y); }
-    }
-    ctx.strokeStyle = 'rgba(128,128,128,0.4)';
-    ctx.lineWidth = 1.2;
-    ctx.stroke();
-    ctx.setLineDash([]);
-
-    // 绘制不可逆路径（红色）
-    if (irrev_pathRecorded && irrev_path.vol.length > 1) {
-      ctx.beginPath();
-      for (let i = 0; i < irrev_path.vol.length; i++) {
-        const v = irrev_path.vol[i];
-        const p = irrev_path.pGas[i]; // 用局部压力作为等效 P_gas
-        if (!Number.isFinite(v) || !Number.isFinite(p) || v <= 0 || p < 0) continue;
-        const x = xV(v);
-        const y = yP(p);
-        if (i === 0 || !Number.isFinite(irrev_path.pGas[i-1])) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
-      }
-      ctx.strokeStyle = '#cc3333';
-      ctx.lineWidth = 2.2;
-      ctx.stroke();
-
-      // 不可逆路径末尾箭头
-      const lastIdx = irrev_path.vol.length - 1;
-      if (lastIdx > 1) {
-        const v1 = irrev_path.vol[lastIdx - 1];
-        const p1 = irrev_path.pGas[lastIdx - 1];
-        const v2 = irrev_path.vol[lastIdx];
-        const p2 = irrev_path.pGas[lastIdx];
-        if (Number.isFinite(v1) && Number.isFinite(p1) && Number.isFinite(v2) && Number.isFinite(p2)) {
-          drawArrow(ctx, xV(v1), yP(p1), xV(v2), yP(p2), '#cc3333');
-        }
-      }
-    }
-
-    // 绘制可逆路径（蓝色）
-    if (rev_active && revSim.trace.vol.length > 1) {
-      ctx.beginPath();
-      for (let i = 0; i < revSim.trace.vol.length; i++) {
-        const v = revSim.trace.vol[i];
-        const p = revSim.trace.pGas[i];
-        if (!Number.isFinite(v) || !Number.isFinite(p) || v <= 0) continue;
-        const x = xV(v);
-        const y = yP(p);
-        if (i === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
-      }
-      ctx.strokeStyle = '#2b78e4';
-      ctx.lineWidth = 2.5;
-      ctx.stroke();
-
-      // 可逆路径末尾箭头
-      const lastIdx = revSim.trace.vol.length - 1;
-      if (lastIdx > 1) {
-        const v1 = revSim.trace.vol[lastIdx - 1];
-        const p1 = revSim.trace.pGas[lastIdx - 1];
-        const v2 = revSim.trace.vol[lastIdx];
-        const p2 = revSim.trace.pGas[lastIdx];
-        if (Number.isFinite(v1) && Number.isFinite(p1) && Number.isFinite(v2) && Number.isFinite(p2)) {
-          drawArrow(ctx, xV(v1), yP(p1), xV(v2), yP(p2), '#2b78e4');
-        }
-      }
-    }
-
-    // 共用的初态点
-    const V0_common = rev_active ? revSim.initialVolume0 : initialVolume0;
-    const P0_common = rev_active ? (revSim.N * revSim.initialTemp0 / Math.max(revSim.initialVolume0, 1e-8)) : initialP0;
-    if (V0_common > 0 && P0_common > 0) {
-      const ix0 = xV(V0_common);
-      const iy0 = yP(P0_common);
-      ctx.fillStyle = '#333';
-      ctx.beginPath();
-      ctx.arc(ix0, iy0, 6, 0, 2 * Math.PI);
-      ctx.fill();
-      ctx.fillStyle = '#222';
-      ctx.font = 'bold 12px Arial';
-      ctx.fillText('初态', ix0 + 10, iy0 - 10);
-    }
-
-    // 可逆终态点
-    if (rev_active && revSim.trace.vol.length > 0 && revSim.currentStep >= revSim.totalSteps) {
-      const lastV = revSim.trace.vol[revSim.trace.vol.length - 1];
-      const lastP = revSim.trace.pGas[revSim.trace.pGas.length - 1];
-      if (Number.isFinite(lastV) && Number.isFinite(lastP)) {
-        const fx = xV(lastV);
-        const fy = yP(lastP);
-        ctx.fillStyle = '#2b78e4';
-        ctx.fillRect(fx - 5, fy - 5, 10, 10);
-        ctx.fillStyle = '#1a5276';
-        ctx.font = 'bold 12px Arial';
-        ctx.fillText('可逆终态', fx + 10, fy - 10);
-      }
-    }
-
-    // 不可逆终态点
-    if (irrev_pathRecorded && irrev_path.vol.length > 0) {
-      const lastV = irrev_path.vol[irrev_path.vol.length - 1];
-      const lastP = irrev_path.pGas[irrev_path.pGas.length - 1];
-      if (Number.isFinite(lastV) && Number.isFinite(lastP)) {
-        const fx = xV(lastV);
-        const fy = yP(lastP);
-        ctx.fillStyle = '#cc3333';
-        ctx.fillRect(fx - 5, fy - 5, 10, 10);
-        ctx.fillStyle = '#9d1c1c';
-        ctx.font = 'bold 12px Arial';
-        ctx.fillText('不可逆终态', fx + 10, fy + 10);
-      }
-    }
-
-    // 功填充动画
-    if (workFillAnimating && rev_active && revSim.trace.vol.length > 1 && irrev_pathRecorded) {
-      const alpha = workFillProgress;
-      const isIsoFill = heatModeSelect.value === 'isothermal';
-      // 可逆功填充：等温线或绝热线下的面积
-      const V_rev_initial = revSim.initialVolume0;
-      const V_rev_final = revSim.trace.vol[revSim.trace.vol.length - 1];
-      const V_fill_start = Math.min(V_rev_initial, V_rev_final);
-      const V_fill_end = V_rev_initial + (V_rev_final - V_rev_initial) * alpha;
-
-      if (Math.abs(V_fill_end - V_fill_start) > 0.001) {
-        ctx.beginPath();
-        const xStart = xV(V_fill_start);
-        ctx.moveTo(xStart, padT + ph);
-        const steps = 200;
-        const adiabConst = (revSim.N * revSim.initialTemp0 / Math.max(revSim.initialVolume0, 1e-8)) * Math.pow(V_rev_initial, 2); // γ=2 for 2D gas
-        for (let i = 0; i <= steps; i++) {
-          const Vf = V_fill_start + (i / steps) * (V_fill_end - V_fill_start);
-          const Pf = isIsoFill
-            ? Nref * Tref / Math.max(Vf, 1e-8)
-            : adiabConst / Math.pow(Math.max(Vf, 1e-8), 2);
-          ctx.lineTo(xV(Vf), yP(Pf));
-        }
-        ctx.lineTo(xV(V_fill_end), padT + ph);
-        ctx.closePath();
-        ctx.fillStyle = 'rgba(43,120,228,0.18)';
-        ctx.fill();
-        ctx.strokeStyle = 'rgba(43,120,228,0.3)';
-        ctx.lineWidth = 1;
-        ctx.stroke();
-
-        // 可逆功数值标签
-        const wRevTotal = Math.abs(revSim.trace.wRev[revSim.trace.wRev.length - 1]);
-        if (alpha > 0.3) {
-          ctx.fillStyle = '#1a5276';
-          ctx.font = 'bold 12px Arial';
-          const midV = (V_fill_start + V_fill_end) / 2;
-          ctx.fillText('|w_rev|=' + wRevTotal.toFixed(2), xV(midV) - 35, padT + ph - 15);
-        }
-      }
-
-      // 不可逆功填充（恒外压矩形）
-      if (irrev_pathRecorded && irrev_path.vol.length > 0) {
-        const V_irrev_initial = irrev_path.vol[0];
-        const V_irrev_final = irrev_path.vol[irrev_path.vol.length - 1];
-        const V_irr_fill_end = V_irrev_initial + (V_irrev_final - V_irrev_initial) * alpha;
-        const Pirr_ext = irrev_Pext;
-
-        if (Math.abs(V_irr_fill_end - V_irrev_initial) > 0.001 && Pirr_ext > 0) {
-          ctx.fillStyle = 'rgba(204,51,51,0.15)';
-          ctx.fillRect(xV(Math.min(V_irrev_initial, V_irr_fill_end)), yP(Pirr_ext),
-            Math.abs(xV(V_irr_fill_end) - xV(V_irrev_initial)), padT + ph - yP(Pirr_ext));
-        }
-
-        // 画 Pext 水平虚线
-        if (Pirr_ext > 0) {
-          ctx.setLineDash([6, 4]);
-          ctx.beginPath();
-          ctx.moveTo(padL, yP(Pirr_ext));
-          ctx.lineTo(padL + pw, yP(Pirr_ext));
-          ctx.strokeStyle = 'rgba(204,51,51,0.5)';
-          ctx.lineWidth = 1.2;
-          ctx.stroke();
-          ctx.setLineDash([]);
-
-          // 标签
-          const wIrrevTotal = Math.abs(Pirr_ext * (V_irrev_final - V_irrev_initial));
-          if (alpha > 0.3) {
-            ctx.fillStyle = '#9d1c1c';
-            ctx.font = 'bold 12px Arial';
-            ctx.fillText('|w_irrev|=' + wIrrevTotal.toFixed(2), padL + pw - 120, yP(Pirr_ext) - 8);
-          }
-        }
-      }
-    }
-
-    // === 图例 ===
-    const legX = padL + pw - 185, legY = padT + 8;
-    ctx.fillStyle = 'rgba(255,255,255,0.85)';
-    ctx.fillRect(legX - 4, legY - 2, 182, 85);
-    ctx.strokeStyle = '#ccc';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(legX - 4, legY - 2, 182, 85);
-
-    function legLine(x, y, color, dash, lw) {
-      if (dash) ctx.setLineDash(dash);
-      ctx.strokeStyle = color;
-      ctx.lineWidth = lw || 2;
-      ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + 22, y); ctx.stroke();
-      if (dash) ctx.setLineDash([]);
-    }
-    ctx.font = '11px Arial';
-    let ly = legY + 14;
-    legLine(legX, ly, '#2b78e4', null); ctx.fillStyle = '#222'; ctx.fillText('可逆路径', legX + 28, ly + 4);
-    ly += 17;
-    legLine(legX, ly, '#cc3333', null); ctx.fillStyle = '#222'; ctx.fillText('不可逆路径', legX + 28, ly + 4);
-    ly += 17;
-    legLine(legX, ly, 'rgba(128,128,128,0.5)', [5,5], 1.5); ctx.fillStyle = '#222'; ctx.fillText('等温参考线', legX + 28, ly + 4);
-    ly += 17;
-    legLine(legX, ly, 'rgba(128,128,128,0.4)', [2,4], 1.2); ctx.fillStyle = '#222'; ctx.fillText('绝热参考线', legX + 28, ly + 4);
-  }
-
-  // 箭头绘制辅助函数
-  function drawArrow(ctx, x1, y1, x2, y2, color) {
-    const angle = Math.atan2(y2 - y1, x2 - x1);
-    const len = 10;
-    ctx.save();
-    ctx.fillStyle = color;
-    ctx.beginPath();
-    ctx.moveTo(x2, y2);
-    ctx.lineTo(x2 - len * Math.cos(angle - 0.5), y2 - len * Math.sin(angle - 0.5));
-    ctx.lineTo(x2 - len * Math.cos(angle + 0.5), y2 - len * Math.sin(angle + 0.5));
-    ctx.closePath();
-    ctx.fill();
-    ctx.restore();
-  }
-
-  // --- 熵分析图 ---
-  function drawEntropyChart() {
-    if (!entropyCanvas) initRevDOM();
-    if (!entropyCanvas || !sctx2) return;
-    const ctx = sctx2;
-    const W = entropyCanvas.width, C = entropyCanvas.height;
-    ctx.clearRect(0, 0, W, C);
-
-    const padL = 62, padR = 30, padT = 28, padB = 52;
-    const pw = W - padL - padR, ph = C - padT - padB;
-
-    ctx.strokeStyle = '#333';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(padL, padT, pw, ph);
-
-    // 零线
-    const yZero = padT + ph / 2;
-    ctx.strokeStyle = 'rgba(0,0,0,0.3)';
-    ctx.setLineDash([3, 4]);
-    ctx.beginPath(); ctx.moveTo(padL, yZero); ctx.lineTo(padL + pw, yZero); ctx.stroke();
-    ctx.setLineDash([]);
-    ctx.fillStyle = '#555';
-    ctx.font = '11px Arial';
-    ctx.fillText('ΔS=0', padL - 42, yZero + 4);
-
-    // 轴标签
-    ctx.fillStyle = '#222';
-    ctx.font = '12px Arial';
-    ctx.fillText('步数 / 帧', W / 2 - 24, C - 8);
-    ctx.fillText('熵变 ΔS', padL - 50, padT - 10);
-
-    // 确定 Y 范围
-    let S_max = 0.5;
-    if (revSim.trace.dS_sys.length > 0) {
-      for (const v of revSim.trace.dS_sys) S_max = Math.max(S_max, Math.abs(v));
-      for (const v of revSim.trace.dS_surr) S_max = Math.max(S_max, Math.abs(v));
-      for (const v of revSim.trace.dS_univ) S_max = Math.max(S_max, Math.abs(v));
-    }
-    if (irrev_pathRecorded && irrev_path.vol.length > 0) {
-      // 用状态函数公式估算不可逆 ΔS
-      const T_i = initialTemp0;
-      const V_i = initialVolume0;
-      for (let i = 0; i < irrev_path.vol.length; i++) {
-        const dum = irrev_path.dU[i] || 0;
-        const T_inst = T_i + dum / N;
-        const V_inst = irrev_path.vol[i];
-        if (T_inst > 0 && V_inst > 0) {
-          const dS_sys_irrev = N * Math.log(Math.max(T_inst / T_i, 1e-8)) + N * Math.log(Math.max(V_inst / V_i, 1e-8));
-          S_max = Math.max(S_max, Math.abs(dS_sys_irrev));
-        }
-        const dS_surr_irrev = -(irrev_path.q[i] || 0) / Math.max(initialTemp0, 1e-8);
-        S_max = Math.max(S_max, Math.abs(dS_surr_irrev));
-      }
-    }
-    S_max = Math.max(S_max * 1.3, 0.5);
-
-    function yS(val) { return padT + ph / 2 - (val / S_max) * (ph / 2); }
-
-    // Y 轴刻度
-    const sTicks = [-S_max, -S_max / 2, 0, S_max / 2, S_max];
-    for (const st of sTicks) {
-      const y = yS(st);
-      ctx.fillStyle = '#555';
-      ctx.fillText(st.toFixed(3), padL - 52, y + 4);
-      ctx.beginPath(); ctx.moveTo(padL - 4, y); ctx.lineTo(padL, y);
-      ctx.strokeStyle = '#555'; ctx.stroke();
-    }
-
-    // 可逆熵曲线（实线）
-    if (revSim.trace.dS_sys.length > 1) {
-      drawEntropySeries(ctx, revSim.trace.dS_sys, '#2b78e4', padL, pw, ph, padT, S_max, false, revSim.trace.dS_sys.length);
-      drawEntropySeries(ctx, revSim.trace.dS_surr, '#f39c12', padL, pw, ph, padT, S_max, false, revSim.trace.dS_sys.length);
-      drawEntropySeries(ctx, revSim.trace.dS_univ, '#27ae60', padL, pw, ph, padT, S_max, false, revSim.trace.dS_sys.length);
-    }
-
-    // 不可逆熵曲线（虚线）
-    if (irrev_pathRecorded && irrev_path.vol.length > 1) {
-      const T_i = initialTemp0;
-      const V_i = initialVolume0;
-      const irr_dS_sys = [];
-      const irr_dS_surr = [];
-      const irr_dS_univ = [];
-      for (let i = 0; i < irrev_path.vol.length; i++) {
-        const dum = irrev_path.dU[i] || 0;
-        const T_inst = T_i + dum / N;
-        const V_inst = irrev_path.vol[i];
-        let dS_s = 0;
-        if (T_inst > 0 && V_inst > 0) {
-          dS_s = N * Math.log(Math.max(T_inst / T_i, 1e-8)) + N * Math.log(Math.max(V_inst / V_i, 1e-8));
-        }
-        irr_dS_sys.push(dS_s);
-        const dS_sur = -(irrev_path.q[i] || 0) / Math.max(initialTemp0, 1e-8);
-        irr_dS_surr.push(dS_sur);
-        irr_dS_univ.push(dS_s + dS_sur);
-      }
-      drawEntropySeries(ctx, irr_dS_sys, '#2b78e4', padL, pw, ph, padT, S_max, true, irrev_path.vol.length);
-      drawEntropySeries(ctx, irr_dS_surr, '#f39c12', padL, pw, ph, padT, S_max, true, irrev_path.vol.length);
-      drawEntropySeries(ctx, irr_dS_univ, '#27ae60', padL, pw, ph, padT, S_max, true, irrev_path.vol.length);
-    }
-
-    // 图例
-    const legX2 = padL + pw - 170, legY2 = padT + 8;
-    ctx.fillStyle = 'rgba(255,255,255,0.85)';
-    ctx.fillRect(legX2 - 4, legY2 - 2, 168, 75);
-    ctx.strokeStyle = '#ccc';
-    ctx.strokeRect(legX2 - 4, legY2 - 2, 168, 75);
-
-    ctx.font = '11px Arial';
-    function entLegendLine(x, y, color, dash) {
-      if (dash) ctx.setLineDash([5, 4]);
-      ctx.strokeStyle = color;
-      ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + 20, y); ctx.stroke();
-      if (dash) ctx.setLineDash([]);
-    }
-    let ely = legY2 + 14;
-    entLegendLine(legX2, ely, '#2b78e4', false); ctx.fillStyle = '#222'; ctx.fillText('ΔS_sys  实线=可逆', legX2 + 26, ely + 4);
-    ely += 17;
-    entLegendLine(legX2, ely, '#f39c12', false); ctx.fillStyle = '#222'; ctx.fillText('ΔS_surr  虚线=不可逆', legX2 + 26, ely + 4);
-    ely += 17;
-    entLegendLine(legX2, ely, '#27ae60', false); ctx.fillStyle = '#222'; ctx.fillText('ΔS_univ', legX2 + 26, ely + 4);
-  }
-
-  function drawEntropySeries(ctx, dataArr, color, padL, pw, ph, padT, S_max, isDashed, totalLen) {
-    if (dataArr.length < 2) return;
-    const n = Math.min(dataArr.length, totalLen || dataArr.length);
-    if (isDashed) ctx.setLineDash([5, 4]);
-    ctx.beginPath();
-    ctx.strokeStyle = color;
-    ctx.lineWidth = 2;
-    for (let i = 0; i < n; i++) {
-      const x = padL + (i / Math.max(n - 1, 1)) * pw;
-      const y = padT + ph / 2 - (dataArr[i] / S_max) * (ph / 2);
-      if (i === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-    }
-    ctx.stroke();
-    if (isDashed) ctx.setLineDash([]);
-  }
 
   // --- 可逆过程状态显示 ---
   function updateRevStats() {
@@ -2087,97 +1864,9 @@
     html += '活塞碰撞功 w_coll：' + revSim.workMicro.toFixed(3) + '<br>';
     html += '热量 q：' + revSim.heatExchange.toFixed(3) + '<br>';
     html += '内能变 ΔU：' + revDeltaU().toFixed(3) + '<br>';
-    html += 'ΔS_sys：' + revSim.cum_dS_sys.toFixed(5) + '<br>';
-    html += 'ΔS_surr：' + revSim.cum_dS_surr.toFixed(5) + '<br>';
-    html += 'ΔS_univ：' + revSim.cum_dS_univ.toFixed(5) + '<br>';
     html += '热边界：' + (heatModeSelect.value === 'adiabatic' ? '绝热，q=0' : '等温（温和恒温器，rate=' + Number(revSim.thermostatRate).toFixed(2) + '）');
 
     revStatsDiv.innerHTML = html;
-
-    // 比较表格
-    drawComparisonTable();
-  }
-
-  function drawComparisonTable() {
-    if (!comparisonTableDiv) { initRevDOM(); if (!comparisonTableDiv) return; }
-    if (!rev_active || revSim.trace.vol.length === 0) { comparisonTableDiv.innerHTML = ''; return; }
-    if (!irrev_pathRecorded) {
-      if (revSim.currentStep >= revSim.totalSteps) {
-        comparisonTableDiv.innerHTML = '<div class="legend" style="color:#888;">可逆过程已完成。点击"记录当前不可逆路径"以显示对比表。</div>';
-      }
-      return;
-    }
-    if (revSim.currentStep < revSim.totalSteps) {
-      comparisonTableDiv.innerHTML = '<div class="legend" style="color:#888;">可逆过程进行中...完成后将显示对比表。</div>';
-      return;
-    }
-
-    const isIso = heatModeSelect.value === 'isothermal';
-    const modeLabel = isIso ? '等温' : '绝热';
-
-    // 可逆终态
-    const wRevFinal = revSim.workMicro;
-    const qRevFinal = revSim.heatExchange;
-    const dURevFinal = revDeltaU();
-    const V_rev_f = revSim.currentVolume;
-    const T_rev_f = revSim.currentT;
-
-    // 不可逆终态
-    const wIrrFinal = irrev_path.w[irrev_path.w.length - 1] || 0;
-    const qIrrFinal = irrev_path.q[irrev_path.q.length - 1] || 0;
-    const dUIrrFinal = irrev_path.dU[irrev_path.dU.length - 1] || 0;
-    const T_i = initialTemp0;
-    const V_irrev_i = irrev_path.vol[0];
-    const V_irrev_f = irrev_path.vol[irrev_path.vol.length - 1];
-    const T_f_irrev = Math.max(T_i + dUIrrFinal / N, 0.01 * T_i);
-
-    // 熵（状态函数公式）
-    let dSsysIrr = 0;
-    if (T_f_irrev > 0 && V_irrev_f > 0) {
-      dSsysIrr = N * Math.log(T_f_irrev / Math.max(T_i, 1e-8))
-               + N * Math.log(V_irrev_f / Math.max(V_irrev_i, 1e-8));
-    }
-    const dSsurrIrr = -(qIrrFinal) / Math.max(initialTemp0, 1e-8);
-    const dSunivIrr = dSsysIrr + dSsurrIrr;
-
-    const dSsysRev = revSim.cum_dS_sys;
-    const dSunivRev = revSim.cum_dS_univ;
-
-    // 理论可逆功
-    let wRevTheory = 0;
-    if (isIso) {
-      wRevTheory = -N * revSim.initialTemp0 * Math.log(Math.max(V_rev_f, 1e-8) / Math.max(revSim.initialVolume0, 1e-8));
-    } else {
-      wRevTheory = N * (revSim.currentT - revSim.initialTemp0);
-    }
-
-    let tbl = '<table class="data-table"><thead><tr><th>量</th><th>不可逆 (' + modeLabel + ')</th><th>可逆 (' + modeLabel + ')</th><th>理论可逆值</th></tr></thead><tbody>';
-    tbl += '<tr><td class="lbl">模拟步数</td><td>' + irrev_path.vol.length + ' 帧</td><td>' + revSim.currentStep + ' 步 × (1+' + revSim.nRelaxPerStep + '弛豫)</td><td>—</td></tr>';
-    tbl += '<tr><td class="lbl">终态温度 T_f</td><td>' + T_f_irrev.toFixed(3) + '</td><td>' + T_rev_f.toFixed(3) + '</td><td>' + (isIso ? revSim.initialTemp0.toFixed(3) : (revSim.initialTemp0 * revSim.initialVolume0 / Math.max(V_rev_f, 1e-8)).toFixed(3)) + '</td></tr>';
-    tbl += '<tr><td class="lbl">终态体积 V_f</td><td>' + V_irrev_f.toFixed(2) + '</td><td>' + V_rev_f.toFixed(2) + '</td><td>' + V_rev_f.toFixed(2) + '</td></tr>';
-    tbl += '<tr><td class="lbl">w (功)</td><td>' + wIrrFinal.toFixed(3) + '</td><td>' + wRevFinal.toFixed(3) + '</td><td>' + wRevTheory.toFixed(3) + '</td></tr>';
-    tbl += '<tr><td class="lbl">q (热)</td><td>' + qIrrFinal.toFixed(3) + '</td><td>' + qRevFinal.toFixed(3) + '</td><td>' + (isIso ? (-wRevTheory).toFixed(3) : '0') + '</td></tr>';
-    tbl += '<tr><td class="lbl">ΔU</td><td>' + dUIrrFinal.toFixed(3) + '</td><td>' + dURevFinal.toFixed(3) + '</td><td>' + (isIso ? '0' : wRevTheory.toFixed(3)) + '</td></tr>';
-    tbl += '<tr><td class="lbl">ΔS_sys</td><td>' + dSsysIrr.toFixed(5) + '</td><td>' + dSsysRev.toFixed(5) + '</td><td>' + dSsysRev.toFixed(5) + '</td></tr>';
-    tbl += '<tr><td class="lbl">ΔS_univ</td><td style="color:#9d1c1c;">' + dSunivIrr.toFixed(5) + '</td><td style="color:#126212;">' + dSunivRev.toFixed(5) + '</td><td>0 (可逆)</td></tr>';
-    tbl += '</tbody></table>';
-
-    // 结论
-    tbl += '<div class="legend" style="margin-top:6px;color:#444;">';
-    if (isIso) {
-      tbl += '<strong>等温过程对比结果：</strong><br>';
-      tbl += '· |w_rev| (MD) = ' + Math.abs(wRevFinal).toFixed(3) + '，理论值 = ' + Math.abs(wRevTheory).toFixed(3) + '<br>';
-      tbl += '· 弛豫步数越多，MD 值越接近理论值<br>';
-      tbl += '· |w_rev| > |w_irrev| = ' + Math.abs(wIrrFinal).toFixed(3) + '（最大功原理）<br>';
-      tbl += '· ΔS_univ(可逆) ≈ ' + dSunivRev.toFixed(5) + '（应接近 0），ΔS_univ(不可逆) ≈ ' + dSunivIrr.toFixed(5) + '（应 > 0）';
-    } else {
-      tbl += '<strong>绝热过程对比结果：</strong><br>';
-      tbl += '· 可逆绝热：ΔS_sys ≈ 0, ΔS_univ ≈ 0<br>';
-      tbl += '· 不可逆绝热：ΔS_sys > 0, ΔS_univ > 0';
-    }
-    tbl += '</div>';
-
-    comparisonTableDiv.innerHTML = tbl;
   }
 
   // --- 事件绑定（延迟到 DOMContentLoaded 后） ---
@@ -2251,11 +1940,6 @@
       if (revThermoRateSlider) revThermoRateSlider.oninput();
       runReversible();
     };
-    if (recordIrrevBtn) recordIrrevBtn.onclick = () => {
-      recordIrrevPathForComparison();
-      drawComparisonTable();
-    };
-
     // 初始化标签
     if (revTargetRatioSlider) revTargetRatioSlider.oninput();
     if (revStepsSlider) revStepsSlider.oninput();
@@ -2327,18 +2011,24 @@
 
 <div class="wrap-rev">
   <div class="panel">
-    <div class="subhead">PV 比较图</div>
-    <canvas id="pvCompareCanvas" width="740" height="340"></canvas>
+    <div class="subhead">准静态位移控制（可逆过程模拟画布）</div>
+    <canvas id="revSimCanvas" width="740" height="430"></canvas>
     <div class="legend">
-      蓝色实线：可逆路径；红色实线：不可逆路径（来自记录数据）；灰色虚线：等温参考线 <span class="eq">P=NkT/V</span>；灰色点线：绝热参考线 <span class="eq">PV<sup>γ</sup>=const</span>（γ=2, 二维）。
-      填充区域：功（面积越大表功越多）。初态和终态分别用圆点和方点标记。
+      蓝色粒子：可逆过程气体分子；灰色板：活塞。活塞每一步微移 dx = (V<sub>目标</sub> - V<sub>0</sub>) / N<sub>steps</sub>，位置控制而非力控制。蓝色箭头表示膨胀，红色箭头表示压缩。
     </div>
 
-    <div class="subhead">熵分析图</div>
-    <canvas id="entropyCanvas" width="740" height="250"></canvas>
+    <div class="subhead">过程跟踪图（可逆）</div>
+    <canvas id="revTraceCanvas" width="740" height="240"></canvas>
     <div class="legend">
-      蓝色：ΔS<sub>sys</sub>（系统熵变，状态函数，与路径无关）；橙色：ΔS<sub>surr</sub>（环境熵变）；绿色：ΔS<sub>univ</sub>（总熵变）。
-      实线 = 可逆过程；虚线 = 不可逆过程。注意可逆过程的 ΔS<sub>univ</sub> 应接近 0，不可逆过程的 ΔS<sub>univ</sub> 应大于 0。
+      蓝色：气体压力 P<sub>gas</sub>（可逆过程中系统始终接近平衡，有单一压强）；红色实线：体积 V；橙色虚点线：初始体积 V<sub>0</sub>。<br>
+      左侧纵轴对应压力，右侧纵轴对应体积，二者在一次演示内使用固定尺度。
+    </div>
+
+    <div class="subhead">功、热与内能变化（可逆）</div>
+    <canvas id="revEnergyCanvas" width="740" height="240"></canvas>
+    <div class="legend">
+      黑色：&Delta;U；蓝色：可逆体积功 w<sub>rev</sub>；橙色：热量 q。<br>
+      本演示采用化学热力学习惯符号：&Delta;U = q + w。
     </div>
   </div>
 
@@ -2373,12 +2063,9 @@
       <button id="revUltraSlowBtn">极慢（3000步，弛豫20）</button>
     </div>
 
-    <button id="recordIrrevBtn" style="margin-top:8px;">记录当前不可逆路径</button>
-    <div class="legend">点击此按钮将当前第一部分中不可逆过程的轨迹数据复制到 PV 图和熵分析图中，用于与可逆过程进行直接对比。建议在不可逆过程接近稳定后再记录。</div>
 
     <div id="revStats" class="rev-stat"></div>
 
-    <div id="comparisonTable" style="margin-top:10px;"></div>
   </div>
 </div>
 
