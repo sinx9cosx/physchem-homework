@@ -567,6 +567,9 @@
       isochoricBtns.style.display = 'none';
       if (isochoricTheoryCard) isochoricTheoryCard.style.display = 'none';
       if (isobaricTheoryCard) isobaricTheoryCard.style.display = '';
+      if (revVolumeWrapper) revVolumeWrapper.style.display = '';
+      if (revExpCompBtns) revExpCompBtns.style.display = '';
+      if (revIsochoricBtns) revIsochoricBtns.style.display = 'none';
     } else {
       isobaricModeBtn.style.background = '#e0e0e0'; isobaricModeBtn.style.color = '#555';
       isochoricModeBtn.style.background = '#2b78e4'; isochoricModeBtn.style.color = '#fff';
@@ -581,6 +584,9 @@
       isochoricBtns.style.display = '';
       if (isochoricTheoryCard) isochoricTheoryCard.style.display = '';
       if (isobaricTheoryCard) isobaricTheoryCard.style.display = 'none';
+      if (revVolumeWrapper) revVolumeWrapper.style.display = 'none';
+      if (revExpCompBtns) revExpCompBtns.style.display = 'none';
+      if (revIsochoricBtns) revIsochoricBtns.style.display = '';
     }
 
     resetReversible();
@@ -1907,7 +1913,8 @@
   // --- 可逆过程 DOM 引用（延迟初始化，因元素在 script 标签之后） ---
   let revTargetRatioSlider = null, revStepsSlider = null;
   let revTargetRatioVal = null, revStepsVal = null;
-  let revExpBtn = null, revCompBtn = null, revResetBtn = null;
+  let revExpBtn = null, revCompBtn = null, revResetBtn = null, revResetBtn2 = null;
+  let revIsochoricBtn = null, revVolumeWrapper = null, revExpCompBtns = null, revIsochoricBtns = null;
   let revNearEqBtn = null, revFastBtn = null, revUltraSlowBtn = null;
   let revRelaxSlider = null, revThermoRateSlider = null;
   let revRelaxVal = null, revThermoRateVal = null;
@@ -1935,6 +1942,11 @@
     revFastBtn = document.getElementById('revFastBtn');
     revUltraSlowBtn = document.getElementById('revUltraSlowBtn');
     revStatsDiv = document.getElementById('revStats');
+    revVolumeWrapper = document.getElementById('revVolumeWrapper');
+    revExpCompBtns = document.getElementById('revExpCompBtns');
+    revIsochoricBtns = document.getElementById('revIsochoricBtns');
+    revIsochoricBtn = document.getElementById('revIsochoricBtn');
+    revResetBtn2 = document.getElementById('revResetBtn2');
   }
 
   // --- 可逆过程独立 MD 模拟对象（替代旧解析变量） ---
@@ -2216,7 +2228,12 @@
     revSim.workMicro = 0;
     revSim.heatExchange = 0;
     revSim.trace = { vol:[], pGas:[], wRev:[], qRev:[], dU:[] };
-    if (revStatsDiv) revStatsDiv.innerHTML = '<span class="label">可逆过程已重置。点击"开始可逆膨胀"或"开始可逆压缩"启动。</span>';
+    if (revStatsDiv) {
+      const msg = processMode === 'isochoric'
+        ? '<span class="label">可逆过程已重置。点击"开始可逆恒容（温度扫描）"启动。</span>'
+        : '<span class="label">可逆过程已重置。点击"开始可逆膨胀"或"开始可逆压缩"启动。</span>';
+      revStatsDiv.innerHTML = msg;
+    }
     if (revSimCanvas && revsctx) {
       revsctx.clearRect(0, 0, revSimCanvas.width, revSimCanvas.height);
     }
@@ -2324,7 +2341,22 @@
     if (revStepsSlider) revStepsSlider.oninput();
     if (revRelaxSlider) revRelaxSlider.oninput();
     if (revThermoRateSlider) revThermoRateSlider.oninput();
-    if (revStatsDiv) revStatsDiv.innerHTML = '<span class="label">可逆过程尚未启动。点击"开始可逆膨胀"或"开始可逆压缩"。</span>';
+    if (revStatsDiv) {
+      const msg = processMode === 'isochoric'
+        ? '<span class="label">可逆过程尚未启动。点击"开始可逆恒容（温度扫描）"。</span>'
+        : '<span class="label">可逆过程尚未启动。点击"开始可逆膨胀"或"开始可逆压缩"。</span>';
+      revStatsDiv.innerHTML = msg;
+    }
+
+    if (revIsochoricBtn) {
+      revIsochoricBtn.onclick = () => {
+        runReversible();
+        updateRevStats();
+      };
+    }
+    if (revResetBtn2) {
+      revResetBtn2.onclick = () => resetReversible();
+    }
   });
 
 })();
@@ -2414,18 +2446,24 @@
   <div class="panel">
     <div class="subhead">可逆过程控制</div>
 
+    <div id="revVolumeWrapper">
     <label>目标活塞位置比（目标体积 / 初始体积）<span id="revTargetRatioVal"></span></label>
     <input id="revTargetRatioSlider" type="range" min="0.30" max="1.80" step="0.01" value="1.50">
     <div class="legend">比值 &gt; 1 表示膨胀（体积增大），比值 &lt; 1 表示压缩（体积减小）。准静态活塞按固定步长移动，不依赖力平衡。</div>
+    </div>
 
     <label>准静态步数 <span id="revStepsVal"></span></label>
     <input id="revStepsSlider" type="range" min="200" max="3000" step="50" value="800">
     <div class="legend">步数越多，过程越缓慢，越接近可逆极限。800 步约需 13 秒（60 fps），3000 步约需 50 秒。</div>
 
-    <div class="rev-btn-row">
+    <div id="revExpCompBtns" class="rev-btn-row">
       <button id="revExpBtn">开始可逆膨胀</button>
       <button id="revCompBtn">开始可逆压缩</button>
       <button id="revResetBtn">重置可逆过程</button>
+    </div>
+    <div id="revIsochoricBtns" class="rev-btn-row" style="display:none;">
+      <button id="revIsochoricBtn">开始可逆恒容（温度扫描）</button>
+      <button id="revResetBtn2">重置可逆过程</button>
     </div>
 
     <label>每步弛豫次数 <span id="revRelaxVal">5</span></label>
