@@ -34,15 +34,7 @@
   .lecture-body ul { margin-top: 4px; margin-bottom: 6px; padding-left: 22px; }
   .lecture-body li { font-size: 13px; line-height: 1.55; margin: 4px 0; }
 
-  .theory { max-width: 1180px; border: 1px solid #b9c7d6; background: #f7fbff; border-radius: 10px; padding: 12px 16px; margin: 12px 0 16px 0; }
-  .theory h2 { font-size: 18px; margin: 4px 0 8px 0; }
-  .theory h3 { font-size: 15px; margin: 12px 0 5px 0; }
-  .theory p { font-size: 13px; line-height: 1.65; margin: 6px 0; }
-  .theory ul { margin-top: 4px; margin-bottom: 6px; padding-left: 22px; }
-  .theory li { font-size: 13px; line-height: 1.55; margin: 4px 0; }
   .eq { font-family: "Times New Roman", serif; background: #eef3f7; border-radius: 5px; padding: 2px 6px; white-space: nowrap; }
-  .theory-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 22px; }
-  @media (max-width: 900px) { .theory-grid { grid-template-columns: 1fr; } }
 
   /* ===== 可逆过程模块样式 ===== */
   .section-divider { max-width:1180px; border-top:3px solid #2b78e4; margin:32px 0 16px 0; padding-top:16px; }
@@ -60,6 +52,9 @@
 </head>
 <body>
 <h1>恒外压下气缸气体的不可逆膨胀与压缩：分子视角</h1>
+<div style="text-align:center; margin:8px 0;">
+  <button id="isobaricModeBtn" style="background:#2b78e4;color:#fff;font-weight:bold;padding:8px 20px;border:none;border-radius:6px 0 0 6px;cursor:pointer;font-size:14px;">恒外压（体积功）</button><button id="isochoricModeBtn" style="background:#e0e0e0;color:#555;font-weight:bold;padding:8px 20px;border:none;border-radius:0 6px 6px 0;cursor:pointer;font-size:14px;">恒容（变温）</button>
+</div>
 <div class="note">
   这是一个二维硬球气体的教学演示。右侧灰色板是活塞，红色箭头表示恒定外压。
   外压小于初始参考压强时发生膨胀，外压大于初始参考压强时发生压缩。
@@ -305,6 +300,35 @@
 </div>
 </details>
 </div>
+
+<div class="lecture" id="isochoricTheoryCard" style="display:none;">
+  <h2>恒容过程理论说明</h2>
+  <p class="lecture-intro">恒容（等容/定容）过程中，系统体积保持不变，因此没有体积功。</p>
+  <details open>
+    <summary>1. 恒容过程的基本特征</summary>
+    <div class="lecture-body">
+      <p>体积恒定 V = V₀ → w = −∫P<sub>ext</sub> dV = 0 → <strong>ΔU = q<sub>V</sub></strong></p>
+      <p>二维单原子理想气体：U = K = NkT → ΔU = Nk(T<sub>f</sub> − T<sub>i</sub>)，C<sub>V</sub> = Nk</p>
+      <p>状态方程：P = NkT/V₀ → <strong>P ∝ T</strong>（压强随温度线性变化）</p>
+    </div>
+  </details>
+  <details>
+    <summary>2. 可逆 vs 不可逆恒容过程</summary>
+    <div class="lecture-body">
+      <p><strong>不可逆恒容：</strong>系统与温度为 T<sub>target</sub> 的热库突然接触（有限温差），通过有限速率热传导趋向平衡。过程中存在有限温差 → ΔS<sub>univ</sub> > 0。</p>
+      <p><strong>可逆恒容：</strong>热浴温度从 T₀ 开始以极微步长线性扫描至 T<sub>target</sub>。每步充分弛豫，系统始终保持近平衡。T<sub>bath</sub> 始终与系统仅差 dT → ΔS<sub>univ</sub> ≈ 0。</p>
+      <p>两者终态相同（T<sub>f</sub>, V₀ 确定），但路径熵产生不同。</p>
+    </div>
+  </details>
+  <details>
+    <summary>3. 能量关系</summary>
+    <div class="lecture-body">
+      <p>恒容下 w ≡ 0，因此 ΔU = q<sub>V</sub>。内能的变化完全由热交换引起。</p>
+      <p>二维理想气体：ΔU = Nk(T<sub>f</sub> − T<sub>i</sub>)。加热时 T<sub>f</sub> > T<sub>i</sub> → ΔU > 0, q > 0；冷却时相反。</p>
+    </div>
+  </details>
+</div>
+
 <div class="wrap">
   <div class="panel">
     <canvas id="simCanvas" width="740" height="430"></canvas>
@@ -331,34 +355,57 @@
     <button id="playBtn">开始 / 暂停</button>
     <button id="stepBtn">单步推进</button>
     <button id="resetBtn">重置</button><br>
+    <div id="isobaricBtns">
     <button id="weakExpBtn">弱膨胀</button>
     <button id="strongExpBtn">强膨胀</button>
     <button id="nearEqBtn">近平衡</button>
     <button id="weakCompBtn">弱压缩</button>
     <button id="strongCompBtn">强压缩</button>
+    </div>
+    <div id="isochoricBtns" style="display:none;">
+    <button id="fastHeatBtn">快速加热</button>
+    <button id="slowHeatBtn">缓慢加热</button>
+    <button id="isoCompareBtn">等温对照</button>
+    <button id="slowCoolBtn">缓慢冷却</button>
+    <button id="fastCoolBtn">快速冷却</button>
+    </div>
 
+    <div id="ratioWrapper">
     <label>外压 / 初始参考压强 <span id="ratioVal"></span></label>
     <input id="ratioSlider" type="range" min="0.20" max="2.50" step="0.01" value="0.78">
     <div class="legend">小于 1 表示膨胀驱动；等于 1 表示接近平衡；大于 1 表示压缩驱动。初始参考压强由固定活塞预平衡后的 NkT/V 得到；局部压力估算会用这个参考值标定。</div>
+    </div>
 
     <label>初始动能温度（控制初始平均动能） <span id="tempVal"></span></label>
     <input id="tempSlider" type="range" min="0.60" max="1.80" step="0.05" value="1.00">
 
-    <label>初始活塞位置（拖动后自动重置，越大越靠右） <span id="posVal"></span></label>
+    <div id="tempRatioWrapper" style="display:none;">
+    <label>目标温度比 T<sub>target</sub> / T<sub>0</sub> <span id="tempRatioVal">1.50</span></label>
+    <input id="tempRatioSlider" type="range" min="0.30" max="2.00" step="0.01" value="1.50">
+    <div class="legend">恒容过程的核心控制参数。T<sub>target</sub> = r<sub>T</sub> × T<sub>0</sub>。拖动后自动重置。</div>
+    </div>
+
+    <div id="posWrapper">
+    <label>初始活塞位置（拖动后自动重置，越大越靠右） <span id="posVal"></span><span id="posLockLabel" style="color:red; font-weight:bold; display:none;"> [锁定：恒容]</span></label>
     <input id="posSlider" type="range" min="0.40" max="0.90" step="0.01" value="0.68">
     <div class="legend">这是初始体积参数。拖动后会重新生成气体初态，而不是在当前过程中移动活塞。</div>
+    </div>
 
+    <div id="dampWrapper">
     <label>活塞阻尼（耗散，帮助最终稳定） <span id="dampVal"></span></label>
     <input id="dampSlider" type="range" min="0.0" max="2.5" step="0.1" value="0.7">
+    </div>
 
     <label>模拟速度 <span id="speedVal"></span></label>
     <input id="speedSlider" type="range" min="0.03" max="1.00" step="0.01" value="0.15">
 
+    <div id="heatModeWrapper">
     <label>热边界条件</label>
     <select id="heatMode" style="width:100%; padding:6px;">
       <option value="adiabatic" selected>绝热壁：q = 0</option>
       <option value="isothermal">等温热浴（简化重标定）：用速度重标定维持平均温度</option>
     </select>
+    </div>
 
     <div id="stats" class="stat"></div>
     <div id="neqBox" class="warn"></div>
@@ -396,6 +443,8 @@
   const speedSlider = document.getElementById('speedSlider');
   const heatModeSelect = document.getElementById('heatMode');
 
+  let processMode = 'isobaric';
+
   const ratioVal = document.getElementById('ratioVal');
   const tempVal = document.getElementById('tempVal');
   const posVal = document.getElementById('posVal');
@@ -413,6 +462,27 @@
 
   const stats = document.getElementById('stats');
   const neqBox = document.getElementById('neqBox');
+
+  // Isochoric mode DOM references
+  const isobaricModeBtn = document.getElementById('isobaricModeBtn');
+  const isochoricModeBtn = document.getElementById('isochoricModeBtn');
+  const tempRatioSlider = document.getElementById('tempRatioSlider');
+  const tempRatioVal = document.getElementById('tempRatioVal');
+  const ratioWrapper = document.getElementById('ratioWrapper');
+  const tempRatioWrapper = document.getElementById('tempRatioWrapper');
+  const posWrapper = document.getElementById('posWrapper');
+  const posLockLabel = document.getElementById('posLockLabel');
+  const dampWrapper = document.getElementById('dampWrapper');
+  const heatModeWrapper = document.getElementById('heatModeWrapper');
+  const isobaricBtns = document.getElementById('isobaricBtns');
+  const isochoricBtns = document.getElementById('isochoricBtns');
+  const isochoricTheoryCard = document.getElementById('isochoricTheoryCard');
+  const isobaricTheoryCard = document.querySelector('.lecture');
+  const fastHeatBtn = document.getElementById('fastHeatBtn');
+  const slowHeatBtn = document.getElementById('slowHeatBtn');
+  const isoCompareBtn = document.getElementById('isoCompareBtn');
+  const slowCoolBtn = document.getElementById('slowCoolBtn');
+  const fastCoolBtn = document.getElementById('fastCoolBtn');
 
   // Model parameters
   const N = 180;
@@ -458,6 +528,10 @@
   let impulseLeft = 0, impulseRight = 0;
   let trace = { pL: [], pR: [], vol: [], wExt: [], wMicro: [], q: [], dU: [] };
 
+  let stableCount = 0;
+  const STABLE_THRESHOLD = 30;
+  let animFrameId = null;
+
   function randn() {
     const u = Math.random() || 1e-9;
     const v = Math.random() || 1e-9;
@@ -470,6 +544,48 @@
     posVal.textContent = Number(posSlider.value).toFixed(2);
     dampVal.textContent = Number(dampSlider.value).toFixed(1);
     speedVal.textContent = Number(speedSlider.value).toFixed(2) + "×";
+    if (tempRatioVal) tempRatioVal.textContent = Number(tempRatioSlider.value).toFixed(2);
+  }
+
+  function switchMode(mode) {
+    if (processMode === mode) return;
+    processMode = mode;
+    running = false;
+    rev_running = false;
+
+    if (mode === 'isobaric') {
+      isobaricModeBtn.style.background = '#2b78e4'; isobaricModeBtn.style.color = '#fff';
+      isochoricModeBtn.style.background = '#e0e0e0'; isochoricModeBtn.style.color = '#555';
+      ratioWrapper.style.display = '';
+      tempRatioWrapper.style.display = 'none';
+      posWrapper.style.display = '';
+      posSlider.disabled = false;
+      posLockLabel.style.display = 'none';
+      dampWrapper.style.display = '';
+      heatModeWrapper.style.display = '';
+      isobaricBtns.style.display = '';
+      isochoricBtns.style.display = 'none';
+      if (isochoricTheoryCard) isochoricTheoryCard.style.display = 'none';
+      if (isobaricTheoryCard) isobaricTheoryCard.style.display = '';
+    } else {
+      isobaricModeBtn.style.background = '#e0e0e0'; isobaricModeBtn.style.color = '#555';
+      isochoricModeBtn.style.background = '#2b78e4'; isochoricModeBtn.style.color = '#fff';
+      ratioWrapper.style.display = 'none';
+      tempRatioWrapper.style.display = '';
+      posWrapper.style.display = '';
+      posSlider.disabled = true;
+      posLockLabel.style.display = '';
+      dampWrapper.style.display = 'none';
+      heatModeWrapper.style.display = 'none';
+      isobaricBtns.style.display = 'none';
+      isochoricBtns.style.display = '';
+      if (isochoricTheoryCard) isochoricTheoryCard.style.display = '';
+      if (isobaricTheoryCard) isobaricTheoryCard.style.display = 'none';
+    }
+
+    resetReversible();
+    initialize();
+    drawAll();
   }
 
   function kineticEnergy() {
@@ -507,6 +623,7 @@
     trace.wMicro.push(workMicro);
     trace.q.push(heatExchange);
     trace.dU.push(deltaU());
+    if (trace.tkin) trace.tkin.push(temperature());
   }
 
   function localPressure(xa, xb) {
@@ -551,40 +668,25 @@
     }
   }
 
-  function fixedPistonStep(dtEq) {
-    // Fixed-volume hard-sphere dynamics used only to pre-equilibrate the gas before the piston is released.
-    let impLeft = 0;
-    let impRight = 0;
-
-    for (const p of particles) {
+  function fixedPistonStepGeneric(particlesArray, nP, pistonX, dtEq) {
+    let impLeft = 0, impRight = 0;
+    for (const p of particlesArray) {
       p.x += p.vx * dtEq;
       p.y += p.vy * dtEq;
     }
-
-    resolveParticleCollisions();
-
-    for (const p of particles) {
-      if (p.y < r) {
-        p.y = r;
-        p.vy = Math.abs(p.vy);
-      }
-      if (p.y > H-r) {
-        p.y = H-r;
-        p.vy = -Math.abs(p.vy);
-      }
-      if (p.x < r) {
-        p.x = r;
-        impLeft += 2*m*Math.abs(p.vx);
-        p.vx = Math.abs(p.vx);
-      }
-      if (p.x > xP-r) {
-        p.x = xP-r;
-        impRight += 2*m*Math.abs(p.vx);
-        p.vx = -Math.abs(p.vx);
-      }
+    resolveCollisions(particlesArray, nP);
+    for (const p of particlesArray) {
+      if (p.y < r) { p.y = r; p.vy = Math.abs(p.vy); }
+      if (p.y > H - r) { p.y = H - r; p.vy = -Math.abs(p.vy); }
+      if (p.x < r) { p.x = r; impLeft += 2 * m * Math.abs(p.vx); p.vx = Math.abs(p.vx); }
+      if (p.x > pistonX - r) { p.x = pistonX - r; impRight += 2 * m * Math.abs(p.vx); p.vx = -Math.abs(p.vx); }
     }
-
     return { left: impLeft, right: impRight };
+  }
+
+  function fixedPistonStep(dtEq) {
+    // Fixed-volume hard-sphere dynamics used only to pre-equilibrate the gas before the piston is released.
+    return fixedPistonStepGeneric(particles, N, xP, dtEq);
   }
 
   function preEquilibrateFixedVolume(nSteps) {
@@ -620,8 +722,10 @@
     pLeftSmooth = 0;
     pRightSmooth = 0;
     trace = { pL: [], pR: [], vol: [], wExt: [], wMicro: [], q: [], dU: [] };
+    if (processMode === 'isochoric') trace.tkin = [];
     workMicro = 0.0;
     heatExchange = 0.0;
+    stableCount = 0;
 
     // place particles on a jittered grid
     const cols = 18;
@@ -671,7 +775,11 @@
     const rawAvg = rawVals.length ? rawVals.reduce((a,b)=>a+b,0)/rawVals.length : initialIdealP0;
     pressureScale = rawAvg > 1e-8 ? initialIdealP0 / rawAvg : 1.0;
 
-    Pext = Number(ratioSlider.value) * initialP0;
+    if (processMode === 'isochoric') {
+      Pext = 0;
+    } else {
+      Pext = Number(ratioSlider.value) * initialP0;
+    }
 
     // Initialize local pressure display near the calibrated reference.
     updateLocalPressures();
@@ -680,15 +788,24 @@
 
     // fixed axes for current run
     pressureAxisMax = Math.max(2.8 * initialP0, 1.35 * Pext, 1.35 * initialIdealP0, 0.8);
+    if (processMode === 'isochoric') {
+      pressureAxisMax = Math.max(3.5 * initialP0, 0.8);
+    }
     volumeAxisMin = minX * H;
     volumeAxisMax = maxX * H;
     speedAxisMax = Math.max(3.6 * Math.sqrt(initialTemp0), 3.0);
-    energyAxisAbsMax = Math.max(
-      Math.abs(Pext * (volumeAxisMax - initialVolume0)),
-      Math.abs(Pext * (volumeAxisMin - initialVolume0)),
-      0.8 * initialEnergy0,
-      3.0
-    );
+    if (processMode === 'isochoric') {
+      const Ttarget = initialTemp0 * Number(tempRatioSlider.value);
+      const maxDeltaU = N * Math.abs(Ttarget - initialTemp0);
+      energyAxisAbsMax = Math.max(maxDeltaU * 1.3, 0.8 * initialEnergy0, 3.0);
+    } else {
+      energyAxisAbsMax = Math.max(
+        Math.abs(Pext * (volumeAxisMax - initialVolume0)),
+        Math.abs(Pext * (volumeAxisMin - initialVolume0)),
+        0.8 * initialEnergy0,
+        3.0
+      );
+    }
 
     for (let i = 0; i < 20; i++) {
       recordThermoTrace();
@@ -731,58 +848,60 @@
     impulseLeft = 0;
     impulseRight = 0;
 
-    for (const p of particles) {
-      p.x += p.vx * dt;
-      p.y += p.vy * dt;
-    }
+    // sub-stepping to prevent particle penetration
+    let maxRelSpeed = Math.abs(vP);
+    for (const p of particles) maxRelSpeed = Math.max(maxRelSpeed, Math.abs(p.vx - vP));
+    const safety = 0.5 * r;
+    const nSub = Math.max(1, Math.ceil(maxRelSpeed * dt / safety), Math.ceil(Math.abs(vP) * dt / safety));
+    const dtSub = dt / nSub;
 
-    resolveParticleCollisions();
+    for (let s = 0; s < nSub; s++) {
+      for (const p of particles) {
+        p.x += p.vx * dtSub;
+        p.y += p.vy * dtSub;
+      }
 
-    for (const p of particles) {
-      if (p.y < r) {
-        p.y = r;
-        p.vy = Math.abs(p.vy);
-      }
-      if (p.y > H-r) {
-        p.y = H-r;
-        p.vy = -Math.abs(p.vy);
-      }
-      if (p.x < r) {
-        p.x = r;
-        impulseLeft += 2*m*Math.abs(p.vx);
-        p.vx = Math.abs(p.vx);
-      }
-      if (p.x > xP-r) {
-        p.x = xP-r;
-        const u = p.vx - vP;
-        if (u > 0) {
-          impulseRight += 2*m*u;
-          const eBefore = 0.5*m*(p.vx*p.vx + p.vy*p.vy);
-          p.vx = vP - u;
-          const eAfter = 0.5*m*(p.vx*p.vx + p.vy*p.vy);
-          workMicro += (eAfter - eBefore);
-        } else {
-          p.vx = Math.min(p.vx, vP);
+      resolveParticleCollisions();
+
+      for (const p of particles) {
+        if (p.y < r) {
+          p.y = r;
+          p.vy = Math.abs(p.vy);
+        }
+        if (p.y > H-r) {
+          p.y = H-r;
+          p.vy = -Math.abs(p.vy);
+        }
+        if (p.x < r) {
+          p.x = r;
+          impulseLeft += 2*m*Math.abs(p.vx);
+          p.vx = Math.abs(p.vx);
+        }
+        if (p.x > xP-r) {
+          p.x = xP-r;
+          const u = p.vx - vP;
+          if (u > 0) {
+            impulseRight += 2*m*u;
+            const eBefore = 0.5*m*(p.vx*p.vx + p.vy*p.vy);
+            p.vx = vP - u;
+            const eAfter = 0.5*m*(p.vx*p.vx + p.vy*p.vy);
+            workMicro += (eAfter - eBefore);
+          } else {
+            p.vx = Math.min(p.vx, vP);
+          }
         }
       }
+
+      const damp = Number(dampSlider.value);
+      const F = (pRightSmooth - Pext) * H - damp * vP;
+      vP += (F / pistonMass) * dtSub;
+      xP += vP * dtSub;
+
+      if (xP < minX) { xP = minX; vP = Math.max(vP, 0); }
+      if (xP > maxX) { xP = maxX; vP = Math.min(vP, 0); }
     }
 
     updateLocalPressures();
-
-    const damp = Number(dampSlider.value);
-    const F = (pRightSmooth - Pext) * H - damp * vP;
-    vP += (F / pistonMass) * dt;
-    xP += vP * dt;
-
-    if (xP < minX) { xP = minX; vP = Math.max(vP, 0); }
-    if (xP > maxX) { xP = maxX; vP = Math.min(vP, 0); }
-
-    for (const p of particles) {
-      if (p.x > xP-r) {
-        p.x = xP-r;
-        p.vx = Math.min(p.vx, vP - Math.abs(p.vx)*0.2);
-      }
-    }
 
     // Optional heat bath: global velocity rescaling to maintain initial average kinetic temperature.
     if (heatModeSelect.value === 'isothermal') {
@@ -808,6 +927,58 @@
       trace.wMicro.shift();
       trace.q.shift();
       trace.dU.shift();
+    }
+
+    time += dt;
+  }
+
+  function stepIsochoric() {
+    const dt = baseDt * Number(speedSlider.value);
+    impulseLeft = 0;
+    impulseRight = 0;
+
+    for (const p of particles) {
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+    }
+
+    resolveParticleCollisions();
+
+    for (const p of particles) {
+      if (p.y < r) { p.y = r; p.vy = Math.abs(p.vy); }
+      if (p.y > H-r) { p.y = H-r; p.vy = -Math.abs(p.vy); }
+      if (p.x < r) { p.x = r; impulseLeft += 2*m*Math.abs(p.vx); p.vx = Math.abs(p.vx); }
+      if (p.x > xP-r) {
+        p.x = xP-r;
+        impulseRight += 2*m*Math.abs(p.vx);
+        p.vx = -Math.abs(p.vx);
+      }
+    }
+
+    updateLocalPressures();
+
+    // Gentle thermostat toward T_target
+    const T_current = temperature();
+    const T_target = initialTemp0 * Number(tempRatioSlider.value);
+    if (T_current > 1e-12) {
+      const rate = 0.3;
+      const lambda = 1 + rate * (Math.sqrt(T_target / T_current) - 1);
+      const kBefore = kineticEnergy();
+      for (const p of particles) {
+        p.vx *= lambda;
+        p.vy *= lambda;
+      }
+      const kAfter = kineticEnergy();
+      heatExchange += (kAfter - kBefore);
+    }
+
+    workMicro = 0;
+
+    recordThermoTrace();
+    if (trace.pL.length > traceLen) {
+      trace.pL.shift(); trace.pR.shift(); trace.vol.shift();
+      trace.wExt.shift(); trace.wMicro.shift(); trace.q.shift(); trace.dU.shift();
+      if (trace.tkin) trace.tkin.shift();
     }
 
     time += dt;
@@ -841,27 +1012,37 @@
 
     const ay = Y(H/2);
     const ax0 = Math.min(px+78, simCanvas.width-70);
-    sctx.strokeStyle = "#cc3333";
-    sctx.lineWidth = 3;
-    sctx.beginPath();
-    sctx.moveTo(ax0, ay);
-    sctx.lineTo(px+18, ay);
-    sctx.stroke();
-    sctx.beginPath();
-    sctx.moveTo(px+16, ay);
-    sctx.lineTo(px+30, ay-8);
-    sctx.lineTo(px+30, ay+8);
-    sctx.closePath();
-    sctx.fillStyle = "#cc3333";
-    sctx.fill();
-    sctx.font = "14px Arial";
-    sctx.fillText("恒外压", ax0-4, ay-13);
-
-    sctx.fillStyle = "#333";
-    sctx.font = "13px Arial";
-    const rr = Number(ratioSlider.value);
-    const dirText = rr < 0.98 ? "膨胀趋势" : (rr > 1.02 ? "压缩趋势" : "近似平衡");
-    sctx.fillText("Pext / P₀ = " + rr.toFixed(2) + "   " + dirText + "   N=" + N, X(0.15), Y(H)+45);
+    if (processMode === 'isochoric') {
+      sctx.fillStyle = "#e67e22";
+      sctx.font = "14px Arial";
+      sctx.fillText("恒容（活塞固定）", ax0-4, ay-13);
+      sctx.fillStyle = "#333";
+      sctx.font = "13px Arial";
+      const rt = Number(tempRatioSlider.value);
+      const dirText2 = rt > 1.02 ? "加热" : (rt < 0.98 ? "冷却" : "恒温");
+      sctx.fillText("T_target / T₀ = " + rt.toFixed(2) + "   " + dirText2 + "   N=" + N, X(0.15), Y(H)+45);
+    } else {
+      sctx.strokeStyle = "#cc3333";
+      sctx.lineWidth = 3;
+      sctx.beginPath();
+      sctx.moveTo(ax0, ay);
+      sctx.lineTo(px+18, ay);
+      sctx.stroke();
+      sctx.beginPath();
+      sctx.moveTo(px+16, ay);
+      sctx.lineTo(px+30, ay-8);
+      sctx.lineTo(px+30, ay+8);
+      sctx.closePath();
+      sctx.fillStyle = "#cc3333";
+      sctx.fill();
+      sctx.font = "14px Arial";
+      sctx.fillText("恒外压", ax0-4, ay-13);
+      sctx.fillStyle = "#333";
+      sctx.font = "13px Arial";
+      const rr = Number(ratioSlider.value);
+      const dirText = rr < 0.98 ? "膨胀趋势" : (rr > 1.02 ? "压缩趋势" : "近似平衡");
+      sctx.fillText("Pext / P₀ = " + rr.toFixed(2) + "   " + dirText + "   N=" + N, X(0.15), Y(H)+45);
+    }
 
     for (const p of particles) {
       sctx.beginPath();
@@ -870,6 +1051,12 @@
       sctx.fill();
       sctx.strokeStyle = "rgba(0,0,0,0.18)";
       sctx.stroke();
+    }
+
+    if (stableCount >= STABLE_THRESHOLD) {
+      sctx.fillStyle = "#15803d";
+      sctx.font = "bold 15px Arial";
+      sctx.fillText("已达稳定态", simCanvas.width - 140, 28);
     }
   }
 
@@ -904,10 +1091,16 @@
     revsctx.stroke();
     revsctx.setLineDash([]);
 
-    // 方向箭头（指示膨胀/压缩）
+    // 方向箭头（指示膨胀/压缩/恒容）
     const ay = Y(H / 2);
     const isExp = revSim.xP_target > revSim.xP_initial;
-    if (isExp) {
+    const isIsochoric = (Math.abs(revSim.xP_target - revSim.xP_initial) < 1e-9);
+    if (isIsochoric) {
+      // 恒容模式：不画箭头，显示中性文本
+      revsctx.font = "bold 13px Arial";
+      revsctx.fillStyle = "#555";
+      revsctx.fillText("恒容温度扫描", px - 45, ay + 5);
+    } else if (isExp) {
       // 向右箭头（膨胀）
       revsctx.strokeStyle = "#2b78e4";
       revsctx.lineWidth = 3;
@@ -1234,6 +1427,7 @@
 
     const padL = 62, padR = 62, padT = 28, padB = 56;
     const pw = W-padL-padR, ph = C-padT-padB;
+    const iso = (processMode === 'isochoric');
 
     // frame
     tctx.strokeStyle="#333";
@@ -1253,8 +1447,8 @@
     // axes labels
     tctx.fillStyle="#222";
     tctx.font="12px Arial";
-    tctx.fillText("压力", padL-50, padT-10);
-    tctx.fillText("体积", W-padR+12, padT-10);
+    tctx.fillText(iso ? "P = NkT/V₀" : "压力", padL-50, padT-10);
+    tctx.fillText(iso ? "V & T" : "体积", W-padR+12, padT-10);
     tctx.fillText("时间", W/2 - 12, C-8);
 
     // left axis ticks (pressure)
@@ -1270,23 +1464,50 @@
       tctx.stroke();
     }
 
-    // right axis ticks (volume)
-    const vTicks = [volumeAxisMin, 0.5*(volumeAxisMin+volumeAxisMax), volumeAxisMax];
-    for (const vt of vTicks) {
-      const y = padT + ph - ((vt-volumeAxisMin)/(volumeAxisMax-volumeAxisMin))*ph;
-      tctx.fillStyle="#444";
-      tctx.fillText(vt.toFixed(1), W-padR+8, y+4);
+    // right axis ticks
+    if (iso) {
+      // Temperature ticks on right axis
+      const tMin = 0, tMax = Math.max(initialTemp0 * 2.2, 1.0);
+      const tTicks = [tMin, tMax/2, tMax];
+      for (const tt of tTicks) {
+        const y = padT + ph - (tt / tMax) * ph;
+        tctx.fillStyle = '#444';
+        tctx.fillText(tt.toFixed(2), W-padR+8, y+4);
+        tctx.beginPath();
+        tctx.moveTo(W-padR, y);
+        tctx.lineTo(W-padR+4, y);
+        tctx.strokeStyle = '#444';
+        tctx.stroke();
+      }
+      // V₀ line on right axis (constant volume)
+      var yV0_iso = padT + ph - 0.5 * ph;
+      tctx.setLineDash([2,5]);
       tctx.beginPath();
-      tctx.moveTo(W-padR, y);
-      tctx.lineTo(W-padR+4, y);
-      tctx.strokeStyle="#444";
+      tctx.moveTo(padL, yV0_iso);
+      tctx.lineTo(padL+pw, yV0_iso);
+      tctx.strokeStyle = '#f39c12';
+      tctx.lineWidth = 1.8;
       tctx.stroke();
+      tctx.setLineDash([]);
+    } else {
+      const vTicks = [volumeAxisMin, 0.5*(volumeAxisMin+volumeAxisMax), volumeAxisMax];
+      for (const vt of vTicks) {
+        const y = padT + ph - ((vt-volumeAxisMin)/(volumeAxisMax-volumeAxisMin))*ph;
+        tctx.fillStyle="#444";
+        tctx.fillText(vt.toFixed(1), W-padR+8, y+4);
+        tctx.beginPath();
+        tctx.moveTo(W-padR, y);
+        tctx.lineTo(W-padR+4, y);
+        tctx.strokeStyle="#444";
+        tctx.stroke();
+      }
     }
 
     function drawSeries(arr, color, mapper) {
+      if (!arr || arr.length < 2) return;
       tctx.beginPath();
       for (let i=0; i<arr.length; i++) {
-        const x = padL + i/(traceLen-1)*pw;
+        const x = padL + i / Math.max(arr.length - 1, 1) * pw;
         const y = mapper(arr[i]);
         if (i===0) tctx.moveTo(x, y); else tctx.lineTo(x, y);
       }
@@ -1296,72 +1517,120 @@
     }
 
     const pMap = val => padT + ph - Math.max(0, Math.min(1, val/pressureAxisMax))*ph;
-    const vMap = val => padT + ph - Math.max(0, Math.min(1, (val-volumeAxisMin)/(volumeAxisMax-volumeAxisMin)))*ph;
 
-    drawSeries(trace.pL, "#1b5e20", pMap);
-    drawSeries(trace.pR, "#8e24aa", pMap);
-    drawSeries(trace.vol, "#c62828", vMap);
+    if (iso) {
+      // Isochoric mode: P and T traces
+      drawSeries(trace.pL, "#1b5e20", pMap);
+      drawSeries(trace.pR, "#8e24aa", pMap);
+      // Temperature on right axis
+      if (trace.tkin) {
+        const tMax = Math.max(initialTemp0 * 2.2, 1.0);
+        const tMap = val => padT + ph - Math.max(0, Math.min(1, val / tMax)) * ph;
+        drawSeries(trace.tkin, "#e67e22", tMap);
+      }
 
-    // initial volume reference line
-    const yV0 = vMap(initialVolume0);
-    tctx.setLineDash([2,5]);
-    tctx.beginPath();
-    tctx.moveTo(padL, yV0);
-    tctx.lineTo(padL+pw, yV0);
-    tctx.strokeStyle="#f39c12";
-    tctx.lineWidth=1.8;
-    tctx.stroke();
-    tctx.setLineDash([]);
+      // V₀ right label
+      tctx.fillStyle = '#b36b00';
+      tctx.font = '12px Arial';
+      tctx.fillText('V=V₀（恒容）', W-padR+8, yV0_iso-4);
 
-    // external pressure line
-    const yExt = pMap(Pext);
-    tctx.setLineDash([6,4]);
-    tctx.beginPath();
-    tctx.moveTo(padL, yExt);
-    tctx.lineTo(padL+pw, yExt);
-    tctx.strokeStyle="#cc3333";
-    tctx.lineWidth=1.8;
-    tctx.stroke();
-    tctx.setLineDash([]);
-
-    // right-side V0 label
-    tctx.fillStyle="#b36b00";
-    tctx.font="12px Arial";
-    tctx.fillText("V₀", W-padR+8, yV0-4);
-
-    // Clean legend below plot, not overlapping data
-    const yL = C - 34;
-    tctx.fillStyle="#222";
-    tctx.font="12px Arial";
-
-    function legendLine(x, color, dash=false) {
-      if (dash) tctx.setLineDash([6,4]);
-      tctx.strokeStyle=color;
-      tctx.lineWidth=2.2;
+      // Clean legend
+      const yL = C - 34;
+      tctx.fillStyle = '#222';
+      tctx.font = '12px Arial';
+      function legendLine(x, color, dash) {
+        if (dash) tctx.setLineDash([6,4]);
+        tctx.strokeStyle = color;
+        tctx.lineWidth = 2.2;
+        tctx.beginPath();
+        tctx.moveTo(x, yL-4);
+        tctx.lineTo(x+22, yL-4);
+        tctx.stroke();
+        if (dash) tctx.setLineDash([]);
+      }
+      tctx.fillText('P左', 12, yL);
+      legendLine(42, '#1b5e20');
+      tctx.fillText('P活塞', 80, yL);
+      legendLine(128, '#8e24aa');
+      tctx.fillText('T_kin', 166, yL);
+      legendLine(210, '#e67e22');
+      tctx.fillText('V=V₀', 256, yL);
+      tctx.setLineDash([2,5]);
+      tctx.strokeStyle = '#f39c12';
+      tctx.lineWidth = 1.8;
       tctx.beginPath();
-      tctx.moveTo(x, yL-4);
-      tctx.lineTo(x+22, yL-4);
+      tctx.moveTo(298, yL-4);
+      tctx.lineTo(320, yL-4);
       tctx.stroke();
-      if (dash) tctx.setLineDash([]);
-    }
+      tctx.setLineDash([]);
+    } else {
+      const vMap = val => padT + ph - Math.max(0, Math.min(1, (val-volumeAxisMin)/(volumeAxisMax-volumeAxisMin)))*ph;
 
-    tctx.fillText("P左", 12, yL);
-    legendLine(42, "#1b5e20");
-    tctx.fillText("P活塞", 80, yL);
-    legendLine(128, "#8e24aa");
-    tctx.fillText("V", 166, yL);
-    legendLine(181, "#c62828");
-    tctx.fillText("Pₑₓₜ", 220, yL);
-    legendLine(255, "#cc3333", true);
-    tctx.fillText("V₀", 294, yL);
-    tctx.setLineDash([2,5]);
-    tctx.strokeStyle="#f39c12";
-    tctx.lineWidth=1.8;
-    tctx.beginPath();
-    tctx.moveTo(318, yL-4);
-    tctx.lineTo(340, yL-4);
-    tctx.stroke();
-    tctx.setLineDash([]);
+      drawSeries(trace.pL, "#1b5e20", pMap);
+      drawSeries(trace.pR, "#8e24aa", pMap);
+      drawSeries(trace.vol, "#c62828", vMap);
+
+      // initial volume reference line
+      const yV0 = vMap(initialVolume0);
+      tctx.setLineDash([2,5]);
+      tctx.beginPath();
+      tctx.moveTo(padL, yV0);
+      tctx.lineTo(padL+pw, yV0);
+      tctx.strokeStyle="#f39c12";
+      tctx.lineWidth=1.8;
+      tctx.stroke();
+      tctx.setLineDash([]);
+
+      // external pressure line
+      const yExt = pMap(Pext);
+      tctx.setLineDash([6,4]);
+      tctx.beginPath();
+      tctx.moveTo(padL, yExt);
+      tctx.lineTo(padL+pw, yExt);
+      tctx.strokeStyle="#cc3333";
+      tctx.lineWidth=1.8;
+      tctx.stroke();
+      tctx.setLineDash([]);
+
+      // right-side V0 label
+      tctx.fillStyle="#b36b00";
+      tctx.font="12px Arial";
+      tctx.fillText("V₀", W-padR+8, yV0-4);
+
+      // Clean legend below plot
+      const yL = C - 34;
+      tctx.fillStyle="#222";
+      tctx.font="12px Arial";
+
+      function legendLine(x, color, dash=false) {
+        if (dash) tctx.setLineDash([6,4]);
+        tctx.strokeStyle=color;
+        tctx.lineWidth=2.2;
+        tctx.beginPath();
+        tctx.moveTo(x, yL-4);
+        tctx.lineTo(x+22, yL-4);
+        tctx.stroke();
+        if (dash) tctx.setLineDash([]);
+      }
+
+      tctx.fillText("P左", 12, yL);
+      legendLine(42, "#1b5e20");
+      tctx.fillText("P活塞", 80, yL);
+      legendLine(128, "#8e24aa");
+      tctx.fillText("V", 166, yL);
+      legendLine(181, "#c62828");
+      tctx.fillText("Pₑₓₜ", 220, yL);
+      legendLine(255, "#cc3333", true);
+      tctx.fillText("V₀", 294, yL);
+      tctx.setLineDash([2,5]);
+      tctx.strokeStyle="#f39c12";
+      tctx.lineWidth=1.8;
+      tctx.beginPath();
+      tctx.moveTo(318, yL-4);
+      tctx.lineTo(340, yL-4);
+      tctx.stroke();
+      tctx.setLineDash([]);
+    }
   }
 
   function drawEnergy() {
@@ -1370,6 +1639,7 @@
 
     const padL = 62, padR = 28, padT = 28, padB = 56;
     const pw = W-padL-padR, ph = C-padT-padB;
+    const iso = (processMode === 'isochoric');
 
     ectx.strokeStyle="#333";
     ectx.lineWidth=1;
@@ -1397,10 +1667,11 @@
     }
 
     function drawSeries(arr, color, dash=false) {
+      if (!arr || arr.length < 2) return;
       if (dash) ectx.setLineDash([6,4]);
       ectx.beginPath();
       for (let i=0; i<arr.length; i++) {
-        const x = padL + i/(traceLen-1)*pw;
+        const x = padL + i / Math.max(arr.length - 1, 1) * pw;
         const y = yMap(arr[i]);
         if (i===0) ectx.moveTo(x,y); else ectx.lineTo(x,y);
       }
@@ -1410,10 +1681,15 @@
       if (dash) ectx.setLineDash([]);
     }
 
-    drawSeries(trace.dU, "#111111");
-    drawSeries(trace.wExt, "#1f77b4");
-    drawSeries(trace.wMicro, "#00a6b4", true);
-    drawSeries(trace.q, "#f39c12");
+    if (iso) {
+      drawSeries(trace.dU, "#111111");
+      drawSeries(trace.q, "#f39c12");
+    } else {
+      drawSeries(trace.dU, "#111111");
+      drawSeries(trace.wExt, "#1f77b4");
+      drawSeries(trace.wMicro, "#00a6b4", true);
+      drawSeries(trace.q, "#f39c12");
+    }
 
     // axis labels
     ectx.fillStyle="#222";
@@ -1449,14 +1725,22 @@
       if (dash) ectx.setLineDash([]);
     }
 
-    ectx.fillText("ΔU", 14, yL);
-    legendLine(42, "#111111");
-    ectx.fillText("w外压", 82, yL);
-    legendLine(126, "#1f77b4");
-    ectx.fillText("w碰撞", 166, yL);
-    legendLine(214, "#00a6b4", true);
-    ectx.fillText("q", 254, yL);
-    legendLine(270, "#f39c12");
+    if (iso) {
+      ectx.fillText('ΔU', 14, yL);
+      legendLine(42, '#111111');
+      ectx.fillText('q (热量)', 82, yL);
+      legendLine(138, '#f39c12');
+      ectx.fillText('恒容：w≡0，ΔU=q_V', 190, yL);
+    } else {
+      ectx.fillText("ΔU", 14, yL);
+      legendLine(42, "#111111");
+      ectx.fillText("w外压", 82, yL);
+      legendLine(126, "#1f77b4");
+      ectx.fillText("w碰撞", 166, yL);
+      legendLine(214, "#00a6b4", true);
+      ectx.fillText("q", 254, yL);
+      legendLine(270, "#f39c12");
+    }
   }
 
   function updateStats() {
@@ -1469,30 +1753,61 @@
     const slowPiston = Math.abs(vP) < 0.015;
     const nearEq = neq < 0.15 && slowPiston;
 
-    stats.innerHTML = `
-      <strong>当前宏观量（教学定义）</strong><br>
-      时间：${time.toFixed(2)}<br>
-      体积：${V.toFixed(2)}，初始体积 V₀：${initialVolume0.toFixed(2)}<br>
-      动能温度估算：${T.toFixed(3)}<br>
-      理想气体式估算 <code>NkT/V</code>：${Pg.toFixed(3)}<br>
-      初始参考压强 P₀（预平衡后 NkT/V）：${initialP0.toFixed(3)}；局部压力标定系数：${pressureScale.toFixed(3)}<br>
-      粒子数：${N}<br>
-      ΔU：${deltaU().toFixed(3)}；w_ext：${workExternal().toFixed(3)}；w_coll：${workMicro.toFixed(3)}；q：${heatExchange.toFixed(3)}<br>
-      一律检验 ΔU-(q+w_coll)：${(deltaU()-heatExchange-workMicro).toFixed(3)}<br>
-      左侧局部压力估算：${pLeftSmooth.toFixed(3)}<br>
-      活塞附近局部压力估算：${pRightSmooth.toFixed(3)}<br>
-      外压：${Pext.toFixed(3)}<br>
-      外压/初始参考压强设定：${Number(ratioSlider.value).toFixed(2)}，${Number(ratioSlider.value) < 1 ? "膨胀驱动" : (Number(ratioSlider.value) > 1 ? "压缩驱动" : "近似平衡")}<br>
-      活塞速度：${vP.toFixed(4)}<br>
-      热边界条件：${heatModeSelect.value === 'adiabatic' ? '绝热，q=0' : '等温热浴（简化重标定），q 来自速度重标定'}
-    `;
-
-    if (nearEq) {
+    if (processMode === 'isochoric') {
+      const Ttarget = initialTemp0 * Number(tempRatioSlider.value);
+      stats.innerHTML = `
+        <strong>当前宏观量（恒容，V=V₀）</strong><br>
+        时间：${time.toFixed(2)}<br>
+        体积 V = V₀：${V.toFixed(2)}（恒定）<br>
+        动能温度 T：${T.toFixed(3)}，目标温度 T<sub>target</sub>：${Ttarget.toFixed(3)}<br>
+        理想气体式估算 <code>P = NkT/V₀</code>：${Pg.toFixed(3)}<br>
+        初始参考压强 P₀：${initialP0.toFixed(3)}；局部压力标定系数：${pressureScale.toFixed(3)}<br>
+        粒子数：${N}<br>
+        <strong>ΔU = q<sub>V</sub></strong>：${deltaU().toFixed(3)}；q：${heatExchange.toFixed(3)}；w ≡ 0<br>
+        检验 ΔU - q：${(deltaU()-heatExchange).toFixed(4)}<br>
+        左侧局部压力估算：${pLeftSmooth.toFixed(3)}<br>
+        活塞附近局部压力估算：${pRightSmooth.toFixed(3)}<br>
+        温度比设定 r<sub>T</sub>：${Number(tempRatioSlider.value).toFixed(2)}，${Number(tempRatioSlider.value) > 1.02 ? "加热" : (Number(tempRatioSlider.value) < 0.98 ? "冷却" : "恒温")}<br>
+      `;
       neqBox.className = "warn good";
-      neqBox.innerHTML = "目前接近平衡：不同区域的局部压力较接近，活塞运动很慢。此时可以近似用一个单一压强描述气体。";
+      neqBox.innerHTML = "恒容过程：活塞固定不动，体积恒定。w = 0，ΔU = q<sub>V</sub>。P ∝ T。";
     } else {
-      neqBox.className = "warn bad";
-      neqBox.innerHTML = "目前明显非平衡：不同区域的局部压力不同，或活塞正在明显运动。无论是快速膨胀还是快速压缩，此时都不能把整个气体严格赋予一个单一热力学压强。";
+      stats.innerHTML = `
+        <strong>当前宏观量（教学定义）</strong><br>
+        时间：${time.toFixed(2)}<br>
+        体积：${V.toFixed(2)}，初始体积 V₀：${initialVolume0.toFixed(2)}<br>
+        动能温度估算：${T.toFixed(3)}<br>
+        理想气体式估算 <code>NkT/V</code>：${Pg.toFixed(3)}<br>
+        初始参考压强 P₀（预平衡后 NkT/V）：${initialP0.toFixed(3)}；局部压力标定系数：${pressureScale.toFixed(3)}<br>
+        粒子数：${N}<br>
+        ΔU：${deltaU().toFixed(3)}；w_ext：${workExternal().toFixed(3)}；w_coll：${workMicro.toFixed(3)}；q：${heatExchange.toFixed(3)}<br>
+        一律检验 ΔU-(q+w_coll)：${(deltaU()-heatExchange-workMicro).toFixed(3)}<br>
+        左侧局部压力估算：${pLeftSmooth.toFixed(3)}<br>
+        活塞附近局部压力估算：${pRightSmooth.toFixed(3)}<br>
+        外压：${Pext.toFixed(3)}<br>
+        外压/初始参考压强设定：${Number(ratioSlider.value).toFixed(2)}，${Number(ratioSlider.value) < 1 ? "膨胀驱动" : (Number(ratioSlider.value) > 1 ? "压缩驱动" : "近似平衡")}<br>
+        活塞速度：${vP.toFixed(4)}<br>
+        热边界条件：${heatModeSelect.value === 'adiabatic' ? '绝热，q=0' : '等温热浴（简化重标定），q 来自速度重标定'}
+      `;
+
+      if (nearEq) {
+        neqBox.className = "warn good";
+        neqBox.innerHTML = "目前接近平衡：不同区域的局部压力较接近，活塞运动很慢。此时可以近似用一个单一压强描述气体。";
+      } else {
+        neqBox.className = "warn bad";
+        neqBox.innerHTML = "目前明显非平衡：不同区域的局部压力不同，或活塞正在明显运动。无论是快速膨胀还是快速压缩，此时都不能把整个气体严格赋予一个单一热力学压强。";
+      }
+    }
+
+    const speedIsLow = Math.abs(vP) < 0.005;
+    if (speedIsLow && nearEq) {
+      stableCount++;
+    } else {
+      stableCount = 0;
+    }
+    if (stableCount >= STABLE_THRESHOLD) {
+      neqBox.className = "warn good";
+      neqBox.innerHTML = "已达稳定态 ✓";
     }
   }
 
@@ -1506,22 +1821,42 @@
 
   function animate() {
     if (running) {
-      stepOne();
+      if (processMode === 'isochoric') {
+        stepIsochoric();
+      } else {
+        stepOne();
+      }
       drawAll();
     }
     if (rev_running) {
-      stepReversible();
+      if (processMode === 'isochoric') {
+        stepRevIsochoric();
+      } else {
+        stepReversible();
+      }
       drawRevSimulation();
+      updateRevStats();
     }
     if (rev_active) {
       drawRevTrace();
       drawRevEnergy();
     }
-    requestAnimationFrame(animate);
+    const hasWork = running || rev_running || rev_active;
+    if (hasWork) {
+      animFrameId = requestAnimationFrame(animate);
+    } else {
+      animFrameId = null;
+    }
   }
 
-  playBtn.onclick = () => { running = !running; };
-  stepBtn.onclick = () => { running = false; stepOne(); drawAll(); };
+  function ensureAnimating() {
+    if (!animFrameId && (running || rev_running || rev_active)) {
+      animFrameId = requestAnimationFrame(animate);
+    }
+  }
+
+  playBtn.onclick = () => { running = !running; if (running) ensureAnimating(); };
+  stepBtn.onclick = () => { running = false; if (processMode === 'isochoric') stepIsochoric(); else stepOne(); drawAll(); };
   resetBtn.onclick = () => initialize();
 
   weakExpBtn.onclick = () => { ratioSlider.value = 0.85; posSlider.value = 0.68; speedSlider.value = 0.12; updateLabels(); initialize(); };
@@ -1531,12 +1866,29 @@
   strongCompBtn.onclick = () => { ratioSlider.value = 2.00; posSlider.value = 0.78; speedSlider.value = 0.07; updateLabels(); initialize(); };
 
   ratioSlider.oninput = updateLabels;
+  ratioSlider.onchange = () => { updateLabels(); initialize(); };
   tempSlider.oninput = updateLabels;
+  tempSlider.onchange = () => { updateLabels(); initialize(); };
   posSlider.oninput = updateLabels;
   posSlider.onchange = () => { updateLabels(); initialize(); };
   dampSlider.oninput = updateLabels;
+  dampSlider.onchange = () => { updateLabels(); initialize(); };
   speedSlider.oninput = updateLabels;
   heatModeSelect.onchange = () => { initialize(); resetReversible(); };
+
+  // Mode switching
+  isobaricModeBtn.onclick = () => switchMode('isobaric');
+  isochoricModeBtn.onclick = () => switchMode('isochoric');
+
+  // Isochoric one-touch buttons
+  fastHeatBtn.onclick = () => { tempRatioSlider.value = 1.80; speedSlider.value = 0.40; updateLabels(); initialize(); };
+  slowHeatBtn.onclick = () => { tempRatioSlider.value = 1.30; speedSlider.value = 0.10; updateLabels(); initialize(); };
+  isoCompareBtn.onclick = () => { tempRatioSlider.value = 1.00; speedSlider.value = 0.15; updateLabels(); initialize(); };
+  slowCoolBtn.onclick = () => { tempRatioSlider.value = 0.70; speedSlider.value = 0.10; updateLabels(); initialize(); };
+  fastCoolBtn.onclick = () => { tempRatioSlider.value = 0.40; speedSlider.value = 0.40; updateLabels(); initialize(); };
+
+  tempRatioSlider.oninput = updateLabels;
+  tempRatioSlider.onchange = () => { updateLabels(); initialize(); };
 
   // --- 可逆过程状态变量（必须在 animate() 调用前声明） ---
   let rev_active = false;
@@ -1663,39 +2015,13 @@
   }
 
   function revStepRelax(dt) {
-    for (const p of revSim.particles) {
-      p.x += p.vx * dt;
-      p.y += p.vy * dt;
-    }
-    resolveCollisions(revSim.particles, revSim.N);
-    for (const p of revSim.particles) {
-      if (p.y < revSim.r) { p.y = revSim.r; p.vy = Math.abs(p.vy); }
-      if (p.y > H - revSim.r) { p.y = H - revSim.r; p.vy = -Math.abs(p.vy); }
-      if (p.x < revSim.r) { p.x = revSim.r; p.vx = Math.abs(p.vx); }
-      if (p.x > revSim.xP - revSim.r) {
-        p.x = revSim.xP - revSim.r;
-        p.vx = -Math.abs(p.vx);
-      }
-    }
+    fixedPistonStepGeneric(revSim.particles, revSim.N, revSim.xP, dt);
   }
 
   function preEquilibrateRevSim(nSteps) {
     const dtEq = baseDt * 0.8;
     for (let i = 0; i < nSteps; i++) {
-      for (const p of revSim.particles) {
-        p.x += p.vx * dtEq;
-        p.y += p.vy * dtEq;
-      }
-      resolveCollisions(revSim.particles, revSim.N);
-      for (const p of revSim.particles) {
-        if (p.y < revSim.r) { p.y = revSim.r; p.vy = Math.abs(p.vy); }
-        if (p.y > H - revSim.r) { p.y = H - revSim.r; p.vy = -Math.abs(p.vy); }
-        if (p.x < revSim.r) { p.x = revSim.r; p.vx = Math.abs(p.vx); }
-        if (p.x > revSim.xP - revSim.r) {
-          p.x = revSim.xP - revSim.r;
-          p.vx = -Math.abs(p.vx);
-        }
-      }
+      fixedPistonStepGeneric(revSim.particles, revSim.N, revSim.xP, dtEq);
     }
   }
 
@@ -1705,9 +2031,14 @@
     revSim.xP_initial = xP;
     revSim.initialVolume0 = revSim.xP_initial * H;
 
-    const targetRatio = Number(revTargetRatioSlider.value);
-    const targetXP = Math.min(maxX, Math.max(minX, revSim.xP_initial * targetRatio));
-    revSim.xP_target = targetXP;
+    if (processMode === 'isochoric') {
+      // Isochoric: piston stays fixed
+      revSim.xP_target = revSim.xP_initial;
+    } else {
+      const targetRatio = Number(revTargetRatioSlider.value);
+      const targetXP = Math.min(maxX, Math.max(minX, revSim.xP_initial * targetRatio));
+      revSim.xP_target = targetXP;
+    }
     revSim.xP = revSim.xP_initial;
     revSim.vP = 0;
     revSim.currentVolume = revSim.initialVolume0;
@@ -1762,11 +2093,16 @@
     }
 
     revPressureAxisMax = Math.max(2.8 * revSim.currentP, 0.8);
-    revEnergyAxisAbsMax = Math.max(
-      Math.abs(revSim.N * revSim.initialTemp0 * Math.log(revSim.xP_target / Math.max(revSim.xP_initial, 1e-8))),
-      0.8 * revSim.initialEnergy0,
-      3.0
-    );
+    if (processMode === 'isochoric') {
+      const TtargetRev = revSim.initialTemp0 * Number(tempRatioSlider.value);
+      revEnergyAxisAbsMax = Math.max(N * Math.abs(TtargetRev - revSim.initialTemp0) * 1.3, 0.8 * revSim.initialEnergy0, 3.0);
+    } else {
+      revEnergyAxisAbsMax = Math.max(
+        Math.abs(revSim.N * revSim.initialTemp0 * Math.log(revSim.xP_target / Math.max(revSim.xP_initial, 1e-8))),
+        0.8 * revSim.initialEnergy0,
+        3.0
+      );
+    }
 
     rev_active = true;
   }
@@ -1777,6 +2113,14 @@
     revSim.trace.wRev.push(revSim.workMicro);
     revSim.trace.qRev.push(revSim.heatExchange);
     revSim.trace.dU.push(revDeltaU());
+    const maxRevTrace = 260;
+    if (revSim.trace.vol.length > maxRevTrace) {
+      revSim.trace.vol.shift();
+      revSim.trace.pGas.shift();
+      revSim.trace.wRev.shift();
+      revSim.trace.qRev.shift();
+      revSim.trace.dU.shift();
+    }
   }
 
   // --- 核心 MD 步进函数（替代旧解析 stepReversible） ---
@@ -1787,7 +2131,7 @@
     }
 
     const speedFactor = Math.max(Number(speedSlider.value), 0.03);
-    const dtMicro = baseDt * Math.min(speedFactor, 0.5);
+    const dtMicro = baseDt * speedFactor;
     const isIso = (heatModeSelect.value === 'isothermal');
 
     // 阶段 1：微移活塞
@@ -1819,12 +2163,47 @@
     revSim.currentStep++;
   }
 
+  function stepRevIsochoric() {
+    if (revSim.currentStep >= revSim.totalSteps) {
+      rev_running = false;
+      return;
+    }
+
+    const speedFactor = Math.max(Number(speedSlider.value), 0.03);
+    const dtMicro = baseDt * speedFactor;
+
+    // Sliding target temperature
+    const T_target = revSim.initialTemp0 * Number(tempRatioSlider.value);
+    const T_step = revSim.initialTemp0 + (T_target - revSim.initialTemp0) * (revSim.currentStep / revSim.totalSteps);
+
+    // Fixed piston: just relax toward sliding T_step
+    for (let k = 0; k < revSim.nRelaxPerStep; k++) {
+      revStepRelax(dtMicro);
+      gentleThermostatRev(T_step, revSim.thermostatRate);
+    }
+    if (revSim.nRelaxPerStep === 0) {
+      gentleThermostatRev(T_step, revSim.thermostatRate);
+    }
+
+    // Record state
+    revSim.currentVolume = revSim.xP * H;
+    revSim.currentT = revTemperature();
+    revSim.currentP = revSim.N * revSim.currentT / Math.max(revSim.currentVolume, 1e-8);
+
+    // w_rev is always 0 for isochoric
+    revSim.workMicro = 0;
+
+    recordRevTrace();
+    revSim.currentStep++;
+  }
+
   function runReversible() {
     if (rev_active || rev_running) {
       resetReversible();
     }
     initRevSim();
     rev_running = true;
+    ensureAnimating();
   }
 
   function resetReversible() {
