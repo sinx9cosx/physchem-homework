@@ -344,7 +344,7 @@
     <div class="subhead">功、热与内能变化</div>
     <canvas id="energyCanvas" width="740" height="240"></canvas>
     <div class="legend">
-      黑色：ΔU；蓝色：恒外压边界功 w<sub>ext</sub>；青色虚线：活塞碰撞功 w<sub>coll</sub>；橙色：热量 q。<br>
+      黑色：ΔU；蓝色：恒外压边界功 w<sub>ext</sub>；青色虚线：活塞碰撞功 w<sub>coll</sub>；橙色：热量 q；墨绿色：亥姆霍兹自由能变 ΔA。<br>
       本演示采用化学热力学习惯符号：ΔU = q + w，膨胀时 w 通常为负，压缩时 w 通常为正。w<sub>coll</sub> 是教学辅助量，不是标准热力学状态函数。
     </div>
   </div>
@@ -524,7 +524,7 @@
   let running = true;
   let pLeftSmooth = 0, pRightSmooth = 0;
   let impulseLeft = 0, impulseRight = 0;
-  let trace = { pL: [], pR: [], vol: [], wExt: [], wMicro: [], q: [], dU: [] };
+  let trace = { pL: [], pR: [], vol: [], wExt: [], wMicro: [], q: [], dU: [], dA: [] };
 
   let stableCount = 0;
   const STABLE_THRESHOLD = 30;
@@ -625,6 +625,17 @@
     return -Pext * (volume() - initialVolume0);
   }
 
+  function deltaA() {
+    const T = temperature();
+    const V = volume();
+    const T0 = initialTemp0;
+    const V0 = initialVolume0;
+    if (V <= 0 || V0 <= 0 || T <= 0 || T0 <= 0) return 0;
+    return -N * (T * Math.log(V) - T0 * Math.log(V0))
+           - N * (T * Math.log(T) - T0 * Math.log(T0))
+           + N * (T - T0) * (Math.log(N) - 1);
+  }
+
   function recordThermoTrace() {
     trace.pL.push(pLeftSmooth);
     trace.pR.push(pRightSmooth);
@@ -633,6 +644,7 @@
     trace.wMicro.push(workMicro);
     trace.q.push(heatExchange);
     trace.dU.push(deltaU());
+    trace.dA.push(deltaA());
     if (trace.tkin) trace.tkin.push(temperature());
   }
 
@@ -731,7 +743,7 @@
     particles = [];
     pLeftSmooth = 0;
     pRightSmooth = 0;
-    trace = { pL: [], pR: [], vol: [], wExt: [], wMicro: [], q: [], dU: [] };
+    trace = { pL: [], pR: [], vol: [], wExt: [], wMicro: [], q: [], dU: [], dA: [] };
     if (processMode === 'isochoric') trace.tkin = [];
     workMicro = 0.0;
     heatExchange = 0.0;
@@ -937,6 +949,7 @@
       trace.wMicro.shift();
       trace.q.shift();
       trace.dU.shift();
+      trace.dA.shift();
     }
 
     time += dt;
@@ -987,7 +1000,7 @@
     recordThermoTrace();
     if (trace.pL.length > traceLen) {
       trace.pL.shift(); trace.pR.shift(); trace.vol.shift();
-      trace.wExt.shift(); trace.wMicro.shift(); trace.q.shift(); trace.dU.shift();
+      trace.wExt.shift(); trace.wMicro.shift(); trace.q.shift(); trace.dU.shift(); trace.dA.shift();
       if (trace.tkin) trace.tkin.shift();
     }
 
@@ -1335,6 +1348,7 @@
     drawSeries(revSim.trace.dU, '#111111');
     drawSeries(revSim.trace.wRev, '#1f77b4');
     drawSeries(revSim.trace.qRev, '#f39c12');
+    drawSeries(revSim.trace.dA, '#228b22');
 
     revectx.fillStyle = '#222';
     revectx.font = '12px Arial';
@@ -1375,6 +1389,8 @@
     legendLine(130, '#1f77b4');
     revectx.fillText('q', 182, yL);
     legendLine(198, '#f39c12');
+    revectx.fillText('ΔA', 222, yL);
+    legendLine(248, '#228b22');
   }
 
   function drawHistogram() {
@@ -1694,11 +1710,13 @@
     if (iso) {
       drawSeries(trace.dU, "#111111");
       drawSeries(trace.q, "#f39c12");
+      drawSeries(trace.dA, "#228b22");
     } else {
       drawSeries(trace.dU, "#111111");
       drawSeries(trace.wExt, "#1f77b4");
       drawSeries(trace.wMicro, "#00a6b4", true);
       drawSeries(trace.q, "#f39c12");
+      drawSeries(trace.dA, "#228b22");
     }
 
     // axis labels
@@ -1740,7 +1758,9 @@
       legendLine(42, '#111111');
       ectx.fillText('q (热量)', 82, yL);
       legendLine(138, '#f39c12');
-      ectx.fillText('恒容：w≡0，ΔU=q_V', 190, yL);
+      ectx.fillText('ΔA', 170, yL);
+      legendLine(196, '#228b22');
+      ectx.fillText('恒容：w≡0，ΔU=q_V', 232, yL);
     } else {
       ectx.fillText("ΔU", 14, yL);
       legendLine(42, "#111111");
@@ -1750,6 +1770,8 @@
       legendLine(214, "#00a6b4", true);
       ectx.fillText("q", 254, yL);
       legendLine(270, "#f39c12");
+      ectx.fillText("ΔA", 294, yL);
+      legendLine(320, "#228b22");
     }
   }
 
@@ -1973,7 +1995,7 @@
     initialEnergy0: 0,
     initialTemp0: 0,
     thermostatRate: 0.3,
-    trace: { vol:[], pGas:[], wRev:[], qRev:[], dU:[] },
+    trace: { vol:[], pGas:[], wRev:[], qRev:[], dU:[], dA:[] },
   };
 
   // --- revSim 辅助函数 ---
@@ -1989,6 +2011,17 @@
 
   function revDeltaU() {
     return revKineticEnergy() - revSim.initialEnergy0;
+  }
+
+  function revDeltaA() {
+    const T = revTemperature();
+    const V = revSim.currentVolume;
+    const T0 = revSim.initialTemp0;
+    const V0 = revSim.initialVolume0;
+    if (V <= 0 || V0 <= 0 || T <= 0 || T0 <= 0) return 0;
+    return -revSim.N * (T * Math.log(V) - T0 * Math.log(V0))
+           - revSim.N * (T * Math.log(T) - T0 * Math.log(T0))
+           + revSim.N * (T - T0) * (Math.log(revSim.N) - 1);
   }
 
   function gentleThermostatRev(targetT, rate) {
@@ -2099,13 +2132,14 @@
     revSim.heatExchange = 0;
     revSim.currentStep = 0;
 
-    revSim.trace = { vol:[], pGas:[], wRev:[], qRev:[], dU:[] };
+    revSim.trace = { vol:[], pGas:[], wRev:[], qRev:[], dU:[], dA:[] };
     for (let i = 0; i < 3; i++) {
       revSim.trace.vol.push(revSim.initialVolume0);
       revSim.trace.pGas.push(revSim.currentP);
       revSim.trace.wRev.push(0);
       revSim.trace.qRev.push(0);
       revSim.trace.dU.push(0);
+      revSim.trace.dA.push(0);
     }
 
     revPressureAxisMax = Math.max(2.8 * revSim.currentP, 0.8);
@@ -2129,6 +2163,7 @@
     revSim.trace.wRev.push(revSim.workMicro);
     revSim.trace.qRev.push(revSim.heatExchange);
     revSim.trace.dU.push(revDeltaU());
+    revSim.trace.dA.push(revDeltaA());
     const maxRevTrace = 260;
     if (revSim.trace.vol.length > maxRevTrace) {
       revSim.trace.vol.shift();
@@ -2136,6 +2171,7 @@
       revSim.trace.wRev.shift();
       revSim.trace.qRev.shift();
       revSim.trace.dU.shift();
+      revSim.trace.dA.shift();
     }
   }
 
@@ -2231,7 +2267,7 @@
     revSim.currentP = 0;
     revSim.workMicro = 0;
     revSim.heatExchange = 0;
-    revSim.trace = { vol:[], pGas:[], wRev:[], qRev:[], dU:[] };
+    revSim.trace = { vol:[], pGas:[], wRev:[], qRev:[], dU:[], dA:[] };
     if (revStatsDiv) {
       const msg = processMode === 'isochoric'
         ? '<span class="label">可逆过程已重置。点击"开始可逆恒容（温度扫描）"启动。</span>'
@@ -2423,7 +2459,7 @@
     <div class="subhead">功、热与内能变化（可逆）</div>
     <canvas id="revEnergyCanvas" width="740" height="240"></canvas>
     <div class="legend">
-      黑色：&Delta;U；蓝色：可逆体积功 w<sub>rev</sub>；橙色：热量 q。<br>
+      黑色：&Delta;U；蓝色：可逆体积功 w<sub>rev</sub>；橙色：热量 q；墨绿色：亥姆霍兹自由能变 ΔA。<br>
       本演示采用化学热力学习惯符号：&Delta;U = q + w。
     </div>
   </div>
