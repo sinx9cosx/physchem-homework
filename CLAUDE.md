@@ -60,3 +60,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 6. **自由膨胀**：移除/快速撤回活塞，展示向真空的自由膨胀（w=0, q=0, ΔU=0）
 
 所有新增功能应继续保持单文件 HTML 形式，方便课堂直接打开使用。
+网页风格与原文件保持一致。
+不改写原来文件的代码，除非我明确告诉你并且确认要改。
+
+## 工作方法
+
+- 每次加载无需扫描"F:\projects\physchem_homework\solution"文件夹和"F:\projects\physchem_homework\idea"文件夹的内容，除非我指定你扫描其中的文件
+- 当前的窗口是主agent，只负责安排分工任务和汇总子agents的工作完成情况和汇报
+- 每次运行任务时开三个子agent。
+- 第一个子agent负责做计划并和我讨论，得到我的确认后才可以执行。
+- 第二个子agent负责写代码和优化
+- 第三个子agent负责代码审查和验证是否满足需求
+- 完成任务当我提出有任何修改时也按照上述方法执行，不同的任务给不同的子agent干
+- 主agent和子agent都要遵守：若上下文窗口使用超过50%，那么自己保留原有记忆并切换新窗口继续项目
+- 每次修改尽量用改动最小的代码实现。
